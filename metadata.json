@@ -1,0 +1,7 @@
+{
+  "name": "Wells Fargo Mobile & Online Banking",
+  "description": "Authentic Wells Fargo mobile and online banking experience featuring accounts management, mobile check deposit, Set Aside bill savings, transfers, Ask Fargo insights, and account opening.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

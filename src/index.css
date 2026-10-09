@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --wf-red: #d71e28;
+    --wf-darkred: #a8131c;
+    --wf-gold: #ffcc00;
+    --wf-gold-dark: #d4a017;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  .font-serif {
+    font-family: 'Source Serif 4', Georgia, Cambria, 'Times New Roman', Times, serif;
+  }
+}
+
+/* Custom gradient for Set Aside progress bars */
+.bg-wf-gradient {
+  background: linear-gradient(90deg, #9b1d64 0%, #d71e28 50%, #f39200 100%);
+}
+
+.text-wf-red {
+  color: #d71e28;
+}
+
+.bg-wf-red {
+  background-color: #d71e28;
+}
+
+.border-wf-red {
+  border-color: #d71e28;
+}
+
+.bg-wf-gold {
+  background-color: #ffcc00;
+}
+
+.border-wf-gold {
+  border-color: #ffcc00;
+}
+

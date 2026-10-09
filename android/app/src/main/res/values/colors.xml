@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Wells Fargo Brand Colors -->
+    <color name="colorPrimary">#d71e28</color>
+    <color name="colorPrimaryDark">#ba161f</color>
+    <color name="colorAccent">#ffcc00</color>
+    <color name="wf_red">#d71e28</color>
+    <color name="wf_gold">#ffcc00</color>
+    <color name="wf_dark_red">#ba161f</color>
+    <color name="ic_launcher_background">#d71e28</color>
+    <color name="splash_background">#d71e28</color>
+    <color name="white">#ffffff</color>
+    <color name="stone_900">#1c1917</color>
+</resources>

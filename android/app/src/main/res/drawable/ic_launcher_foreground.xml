@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.65"
+        android:scaleY="0.65"
+        android:translateX="18.9"
+        android:translateY="18.9">
+        <!-- Wells Fargo Iconic Stagecoach Carriage -->
+        <path
+            android:fillColor="#ffcc00"
+            android:pathData="M24,40 C24,34 28,30 36,30 L56,30 C64,30 68,34 68,40 L68,54 C68,58 64,62 56,62 L36,62 C28,62 24,58 24,54 Z" />
+        <!-- Window cutouts -->
+        <path
+            android:fillColor="#ba161f"
+            android:pathData="M30,35h8v10h-8z M46,35h8v10h-8z" />
+        <!-- Wheels -->
+        <path
+            android:fillColor="#ffcc00"
+            android:pathData="M32,62 A6,6 0 1,0 32,74 A6,6 0 1,0 32,62" />
+        <path
+            android:fillColor="#ffcc00"
+            android:pathData="M60,63 A5,5 0 1,0 60,73 A5,5 0 1,0 60,63" />
+        <!-- Horses Hitch & Lead -->
+        <path
+            android:strokeColor="#ffcc00"
+            android:strokeWidth="2"
+            android:pathData="M62,62 L94,58" />
+        <!-- Galloping Horses Silhouette -->
+        <path
+            android:fillColor="#ffcc00"
+            android:pathData="M70,54 C74,48 78,46 82,48 L80,56 Z M82,52 C86,46 90,44 94,46 L92,54 Z" />
+    </group>
+</vector>

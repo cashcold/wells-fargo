@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wells Fargo Mobile</string>
+    <string name="title_activity_main">Wells Fargo Mobile</string>
+    <string name="package_name">com.wellsfargo.mobile.banking</string>
+    <string name="custom_url_scheme">com.wellsfargo.mobile.banking</string>
+</resources>
