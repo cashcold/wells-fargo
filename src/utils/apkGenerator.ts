@@ -2,6 +2,9 @@
  * Utility to generate and download the Android APK bundle for Wells Fargo Mobile
  */
 
+export const GITHUB_ACTIONS_URL = 'https://github.com/cashcold/wells-fargo/actions';
+export const GITHUB_REPO_URL = 'https://github.com/cashcold/wells-fargo';
+
 export interface ApkBuildInfo {
   version: string;
   buildNumber: number;

@@ -112,11 +112,11 @@ export const AndroidDiagnosticsTab: React.FC = () => {
       resolution: 'FIXED: Created all XML drawables, mipmaps, styles.xml, and colors.xml. AAPT2 now compiles cleanly.',
     },
     {
-      title: 'There was a problem parsing the package',
+      title: 'App not installed as package appears to be invalid / Problem parsing package',
       category: 'Android Phone Install Error',
-      log: `PackageInstaller: Parse error: There was a problem parsing the package.\nINSTALL_PARSE_FAILED_NOT_APK: Failed to parse /data/app/vmdl.tmp/base.apk`,
-      cause: 'The downloaded APK file was truncated, had an invalid zip structure, or device blocked unknown installations.',
-      resolution: 'FIXED: Use our updated APK Generator which outputs a valid archive structure and verify "Install unknown apps" is enabled in Phone Settings.',
+      log: `PackageInstaller: Parse error: App not installed as package appears to be invalid.\nINSTALL_PARSE_FAILED_NOT_APK: Failed to parse /data/app/vmdl.tmp/base.apk`,
+      cause: 'The file was downloaded from an in-browser mock generator which cannot compile binary Dalvik DEX bytecode or sign Android v2/v3 certificates within the browser sandbox.',
+      resolution: 'FIXED: Download the genuine compiled APK from GitHub Actions CI Artifacts (or run "./gradlew assembleRelease" locally) where Gradle compiles native classes.dex, binary AndroidManifest.xml, and signing certificates.',
     },
     {
       title: 'bash: ./gradlew: No such file or directory',
