@@ -24,7 +24,7 @@ export const CURRENT_APK_BUILD: ApkBuildInfo = {
 };
 
 export function downloadApkFile(build: ApkBuildInfo = CURRENT_APK_BUILD) {
-  const fileName = `WellsFargo-Mobile-v${build.version}-b${build.buildNumber}-${build.buildType}.apk`;
+  const fileName = 'Wells-Fargo.apk';
 
   // Construct a valid ZIP / APK binary structure
   // APK is essentially a ZIP archive containing AndroidManifest.xml, classes.dex, resources.arsc, and assets

@@ -80,14 +80,21 @@ jobs:
         run: |
           cd android
           chmod +x gradlew || true
-          ./gradlew assembleDebug --no-daemon --stacktrace
-          ./gradlew assembleRelease --no-daemon --stacktrace || true
+          BUILD_TYPE="${{ inputs.build_type || 'release' }}"
+          if [ "$BUILD_TYPE" = "debug" ]; then
+            ./gradlew assembleDebug --no-daemon --stacktrace
+            mkdir -p single_apk
+            find app/build/outputs/apk/debug -name "*.apk" -exec cp {} single_apk/Wells-Fargo.apk \;
+          else
+            ./gradlew assembleRelease --no-daemon --stacktrace
+            mkdir -p single_apk
+            find app/build/outputs/apk/release -name "*.apk" -exec cp {} single_apk/Wells-Fargo.apk \;
+          fi
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
-          name: wells-fargo-android-apks
-          path: |
-            android/app/build/outputs/apk/**/*.apk
+          name: Wells-Fargo
+          path: android/single_apk/Wells-Fargo.apk
           retention-days: 30
-          if-no-files-found: warn
+          if-no-files-found: error

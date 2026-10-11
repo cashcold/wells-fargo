@@ -1,6 +1,6 @@
 {
   "appId": "com.wellsfargo.mobile.banking",
-  "appName": "Wells Fargo Mobile",
+  "appName": "Wells Fargo",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"

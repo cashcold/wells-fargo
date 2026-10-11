@@ -69,8 +69,8 @@ const INITIAL_RUNS: WorkflowRun[] = [
       '2026-10-09T18:46:08.520Z android-actions/setup-android@v3: SDK 34, build-tools 34.0.0 ready',
       '2026-10-09T18:46:12.100Z npx @capacitor/cli sync android: updated web assets into android/app/src/main/assets/public',
       '2026-10-09T18:46:48.330Z ./gradlew assembleRelease: BUILD SUCCESSFUL in 36s (28 actionable tasks)',
-      '2026-10-09T18:46:58.110Z zipalign & apksigner: app-release.apk verified with Signature Scheme v2/v3',
-      '2026-10-09T18:47:01.002Z actions/upload-artifact@v4: uploaded app-release.apk (18.4 MB) -> Artifact #482910',
+      '2026-10-09T18:46:58.110Z zipalign & apksigner: Wells-Fargo.apk verified with Signature Scheme v2/v3',
+      '2026-10-09T18:47:01.002Z actions/upload-artifact@v4: uploaded single artifact Wells-Fargo.apk (18.4 MB) -> Artifact #482910',
       '2026-10-09T18:47:01.400Z Job completed successfully in 1m 31s',
     ],
   },
@@ -342,7 +342,7 @@ export const AndroidWorkflowsModal: React.FC<AndroidWorkflowsModalProps> = ({
                   ...r.logs,
                   'BUILD SUCCESSFUL in 42s',
                   'Zipalign & APK signing completed with v2/v3 signature',
-                  'actions/upload-artifact@v4: uploaded app-release.apk',
+                  'actions/upload-artifact@v4: uploaded Wells-Fargo.apk',
                   'Job completed successfully.',
                 ],
               }
@@ -444,20 +444,24 @@ jobs:
         run: |
           cd android
           chmod +x gradlew || true
-          if [ "\${{ inputs.build_type }}" = "debug" ]; then
+          BUILD_TYPE="\${{ inputs.build_type || 'release' }}"
+          if [ "$BUILD_TYPE" = "debug" ]; then
             ./gradlew assembleDebug --no-daemon --stacktrace
+            mkdir -p single_apk
+            find app/build/outputs/apk/debug -name "*.apk" -exec cp {} single_apk/Wells-Fargo.apk \\;
           else
-            ./gradlew assembleRelease --no-daemon --stacktrace || ./gradlew assembleDebug --no-daemon --stacktrace
+            ./gradlew assembleRelease --no-daemon --stacktrace
+            mkdir -p single_apk
+            find app/build/outputs/apk/release -name "*.apk" -exec cp {} single_apk/Wells-Fargo.apk \\;
           fi
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-\${{ inputs.build_type || 'release' }}-apk
-          path: |
-            android/app/build/outputs/apk/**/*.apk
+          name: Wells-Fargo
+          path: android/single_apk/Wells-Fargo.apk
           retention-days: 30
-          if-no-files-found: warn`;
+          if-no-files-found: error`;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
@@ -895,7 +899,7 @@ jobs:
                 <div className="bg-[#161b22] border border-[#30363d] rounded-lg p-4 space-y-2">
                   <div className="text-xs text-[#8b949e] font-medium">Artifacts Generated</div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono text-white">app-{selectedRun.buildType}.apk</span>
+                    <span className="text-xs font-mono text-white">Wells-Fargo.apk</span>
                     <span className="text-xs text-[#3fb950] font-mono">{selectedRun.apkSize}</span>
                   </div>
                   <div className="text-[11px] text-[#8b949e] truncate">
