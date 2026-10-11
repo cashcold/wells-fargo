@@ -1,0 +1,15 @@
+{
+	"appId": "com.wellsfargo.mobile.banking",
+	"appName": "Wells Fargo Mobile",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https"
+	},
+	"plugins": {
+		"SplashScreen": {
+			"launchShowDuration": 2000,
+			"backgroundColor": "#d71e28",
+			"showSpinner": false
+		}
+	}
+}

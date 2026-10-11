@@ -82,7 +82,7 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
         {/* Full-bleed Executive Photography Background */}
         <div className="absolute inset-0 z-0">
           <img
-            src="/src/assets/images/wf_cib_hero_atrium_1791411858434.jpg"
+            src="/assets/images/wf_cib_hero_atrium_1791411858434.jpg"
             alt="Corporate executives walking together through modern sunlit glass atrium"
             className="w-full h-full object-cover object-right lg:object-center"
           />
@@ -183,7 +183,7 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
             <div>
               <div className="h-44 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_cib_executives_skyline_1791411880367.jpg"
+                  src="/assets/images/wf_cib_executives_skyline_1791411880367.jpg"
                   alt="Boardroom executives looking out over metropolitan skyline"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -362,7 +362,7 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
             <div>
               <div className="h-44 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_cib_speaker_podium_1791411898871.jpg"
+                  src="/assets/images/wf_cib_speaker_podium_1791411898871.jpg"
                   alt="Senior executive speaking into podium microphone at Wall Street conference"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -420,7 +420,7 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
             <div>
               <div className="h-44 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_cib_charlie_scharf_1791411919139.jpg"
+                  src="/assets/images/wf_cib_charlie_scharf_1791411919139.jpg"
                   alt="Charlie Scharf CEO corporate portrait smiling in navy suit"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -450,7 +450,7 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
             <div>
               <div className="h-44 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_cib_ai_roundtable_1791411938685.jpg"
+                  src="/assets/images/wf_cib_ai_roundtable_1791411938685.jpg"
                   alt="Roundtable executive discussion on financing artificial intelligence infrastructure"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -498,7 +498,7 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
             <div>
               <div className="h-52 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_cib_two_execs_walking_1791411957129.jpg"
+                  src="/assets/images/wf_cib_two_execs_walking_1791411957129.jpg"
                   alt="Two investment banking executives walking past modern glass skyscraper"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -529,7 +529,7 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
             <div>
               <div className="h-52 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_cib_trio_stairs_1791411974360.jpg"
+                  src="/assets/images/wf_cib_trio_stairs_1791411974360.jpg"
                   alt="Trio of financial executives walking down modern outdoor corporate stone stairs"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -560,7 +560,7 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
             <div>
               <div className="h-52 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_cib_cre_lounge_1791411989247.jpg"
+                  src="/assets/images/wf_cib_cre_lounge_1791411989247.jpg"
                   alt="Two commercial real estate executives conversing in high-rise corner lounge"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -591,7 +591,7 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
             <div>
               <div className="h-52 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_cib_lending_crane_1791412011602.jpg"
+                  src="/assets/images/wf_cib_lending_crane_1791412011602.jpg"
                   alt="Corporate lending executive and engineer discussing development overlooking construction crane"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -622,7 +622,7 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
             <div>
               <div className="h-52 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_cib_tech_laptop_1791412029760.jpg"
+                  src="/assets/images/wf_cib_tech_laptop_1791412029760.jpg"
                   alt="Two corporate treasury executives working collaboratively at laptop screen"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -653,7 +653,7 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
             <div>
               <div className="h-52 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_cib_board_review_1791412046842.jpg"
+                  src="/assets/images/wf_cib_board_review_1791412046842.jpg"
                   alt="Three corporate finance professionals reviewing financial reports around sleek white table"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -699,7 +699,7 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
             <div>
               <div className="h-44 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_cib_charlotte_weir_1791412062192.jpg"
+                  src="/assets/images/wf_cib_charlotte_weir_1791412062192.jpg"
                   alt="Charlotte Weir Head of Corporate Banking EMEA executive portrait in red blouse"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -743,7 +743,7 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
             <div>
               <div className="h-44 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_cib_fx_awards_gala_1791412076549.jpg"
+                  src="/assets/images/wf_cib_fx_awards_gala_1791412076549.jpg"
                   alt="Wells Fargo FX team in formal evening wear on stage holding trophy award"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -774,7 +774,7 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
             <div>
               <div className="h-44 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_cib_veteran_soldier_1791412091219.jpg"
+                  src="/assets/images/wf_cib_veteran_soldier_1791412091219.jpg"
                   alt="Smiling Black female military veteran in camouflage uniform"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -805,7 +805,7 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
             <div>
               <div className="h-44 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_cib_wheelchair_lounge_1791412107181.jpg"
+                  src="/assets/images/wf_cib_wheelchair_lounge_1791412107181.jpg"
                   alt="Colleagues in modern high-rise office lounge talking near panoramic glass windows"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -1237,7 +1237,7 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <img
-                      src="/src/assets/images/wf_cib_charlotte_weir_1791412062192.jpg"
+                      src="/assets/images/wf_cib_charlotte_weir_1791412062192.jpg"
                       alt="Charlotte Weir"
                       className="w-14 h-14 rounded-full object-cover border border-stone-300"
                     />

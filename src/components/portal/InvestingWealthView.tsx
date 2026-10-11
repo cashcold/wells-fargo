@@ -86,7 +86,7 @@ export const InvestingWealthView: React.FC<InvestingWealthViewProps> = ({
               {/* Right Hero Image */}
               <div className="lg:col-span-7 h-64 sm:h-80 lg:h-[440px] relative overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_estate_hero_1791404670674.jpg"
+                  src="/assets/images/wf_estate_hero_1791404670674.jpg"
                   alt="Wells Fargo Estate Planning Advisor Consultation with Family"
                   className="w-full h-full object-cover object-center"
                 />
@@ -298,7 +298,7 @@ export const InvestingWealthView: React.FC<InvestingWealthViewProps> = ({
 
               <div className="md:col-span-7 relative h-64 sm:h-76 lg:h-80 overflow-hidden flex items-center justify-end">
                 <img
-                  src="/src/assets/images/wf_private_wealth_jet_1791404685504.jpg"
+                  src="/assets/images/wf_private_wealth_jet_1791404685504.jpg"
                   alt="Father and daughter stepping down private jet airstair"
                   className="w-full h-full object-cover object-right"
                 />
@@ -323,7 +323,7 @@ export const InvestingWealthView: React.FC<InvestingWealthViewProps> = ({
                 <div>
                   <div className="h-48 overflow-hidden">
                     <img
-                      src="/src/assets/images/wf_bridge_strategy_1791404705051.jpg"
+                      src="/assets/images/wf_bridge_strategy_1791404705051.jpg"
                       alt="Modern suspension bridge across open water"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -352,7 +352,7 @@ export const InvestingWealthView: React.FC<InvestingWealthViewProps> = ({
                 <div>
                   <div className="h-48 overflow-hidden">
                     <img
-                      src="/src/assets/images/wf_market_charts_1791404719727.jpg"
+                      src="/assets/images/wf_market_charts_1791404719727.jpg"
                       alt="Market candlestick graphs and global financial trends"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -381,7 +381,7 @@ export const InvestingWealthView: React.FC<InvestingWealthViewProps> = ({
                 <div>
                   <div className="h-48 overflow-hidden">
                     <img
-                      src="/src/assets/images/wf_retirement_1791404771904.jpg"
+                      src="/assets/images/wf_retirement_1791404771904.jpg"
                       alt="Smiling mature couple outdoors embracing at sunset"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -416,7 +416,7 @@ export const InvestingWealthView: React.FC<InvestingWealthViewProps> = ({
               <div className="md:col-span-4 flex justify-center">
                 <div className="w-48 sm:w-56 h-56 sm:h-64 rounded-xl overflow-hidden shadow-2xl bg-transparent">
                   <img
-                    src="/src/assets/images/wf_jd_trophy_1791404755863.jpg"
+                    src="/assets/images/wf_jd_trophy_1791404755863.jpg"
                     alt="J.D. Power #1 Customer Satisfaction Trophy for Wealth Management Digital Experience"
                     className="w-full h-full object-contain"
                   />
@@ -487,7 +487,7 @@ export const InvestingWealthView: React.FC<InvestingWealthViewProps> = ({
                 <div>
                   <div className="h-52 overflow-hidden">
                     <img
-                      src="/src/assets/images/wf_advisor_desk_1791404789202.jpg"
+                      src="/assets/images/wf_advisor_desk_1791404789202.jpg"
                       alt="Advisor meeting with couple discussing cash flow"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -516,7 +516,7 @@ export const InvestingWealthView: React.FC<InvestingWealthViewProps> = ({
                 <div>
                   <div className="h-52 overflow-hidden">
                     <img
-                      src="/src/assets/images/wf_digital_assets_1791404733724.jpg"
+                      src="/assets/images/wf_digital_assets_1791404733724.jpg"
                       alt="Glowing 3D digital assets globe network"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -575,7 +575,7 @@ export const InvestingWealthView: React.FC<InvestingWealthViewProps> = ({
             </div>
             <div className="w-full md:w-80 rounded-xl overflow-hidden shadow-xl border border-white/20">
               <img
-                src="/src/assets/images/wf_private_wealth_jet_1791404685504.jpg"
+                src="/assets/images/wf_private_wealth_jet_1791404685504.jpg"
                 alt="Private Wealth Jet Service"
                 className="w-full h-56 object-cover"
               />

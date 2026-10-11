@@ -439,7 +439,7 @@ export const BusinessBankingView: React.FC<BusinessBankingViewProps> = ({
 
           <div className="md:col-span-7 h-72 sm:h-84 lg:h-96 rounded-xl overflow-hidden shadow-xs flex items-center justify-end">
             <img
-              src="/src/assets/images/wf_business_tailor_designer_1791408920981.jpg"
+              src="/assets/images/wf_business_tailor_designer_1791408920981.jpg"
               alt="Smiling African-American tailor and business owner in fashion studio"
               className="w-full h-full object-cover object-center"
             />
@@ -461,7 +461,7 @@ export const BusinessBankingView: React.FC<BusinessBankingViewProps> = ({
             <div>
               <div className="h-52 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_business_florist_tablet_1791408939155.jpg"
+                  src="/assets/images/wf_business_florist_tablet_1791408939155.jpg"
                   alt="Young florist smiling with tablet in plant boutique"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -483,7 +483,7 @@ export const BusinessBankingView: React.FC<BusinessBankingViewProps> = ({
             <div>
               <div className="h-52 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_business_cafe_banker_1791408955045.jpg"
+                  src="/assets/images/wf_business_cafe_banker_1791408955045.jpg"
                   alt="Wells Fargo business banker consulting with bakery owner"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -505,7 +505,7 @@ export const BusinessBankingView: React.FC<BusinessBankingViewProps> = ({
             <div>
               <div className="h-52 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_business_foodtruck_pos_1791408971469.jpg"
+                  src="/assets/images/wf_business_foodtruck_pos_1791408971469.jpg"
                   alt="Friendly food truck owner presenting payment reader"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -674,7 +674,7 @@ export const BusinessBankingView: React.FC<BusinessBankingViewProps> = ({
             <div>
               <div className="h-56 sm:h-64 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_business_chef_kitchen_1791408989740.jpg"
+                  src="/assets/images/wf_business_chef_kitchen_1791408989740.jpg"
                   alt="Cheerful Black female restaurant chef and catering business owner in commercial kitchen"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -703,7 +703,7 @@ export const BusinessBankingView: React.FC<BusinessBankingViewProps> = ({
             <div>
               <div className="h-56 sm:h-64 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_business_retail_laptop_1791409006005.jpg"
+                  src="/assets/images/wf_business_retail_laptop_1791409006005.jpg"
                   alt="Hispanic male shopkeeper in retail store typing on laptop"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -732,7 +732,7 @@ export const BusinessBankingView: React.FC<BusinessBankingViewProps> = ({
             <div>
               <div className="h-56 sm:h-64 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_business_design_studio_1791409028589.jpg"
+                  src="/assets/images/wf_business_design_studio_1791409028589.jpg"
                   alt="Two creative fashion designers reviewing prototypes on desk"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -761,7 +761,7 @@ export const BusinessBankingView: React.FC<BusinessBankingViewProps> = ({
             <div>
               <div className="h-56 sm:h-64 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_business_pottery_payroll_1791409043097.jpg"
+                  src="/assets/images/wf_business_pottery_payroll_1791409043097.jpg"
                   alt="Mature woman artisan in yellow cardigan working on laptop at ceramics studio"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />

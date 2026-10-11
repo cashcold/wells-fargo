@@ -947,7 +947,7 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
               <div className="rounded-xl overflow-hidden shadow-xs border border-stone-200 bg-stone-900 text-white">
                 <div className="relative h-28 overflow-hidden">
                   <img
-                    src="/src/assets/images/wf_autograph_sunset_1791070287983.jpg"
+                    src="/assets/images/wf_autograph_sunset_1791070287983.jpg"
                     alt="Wells Fargo Autograph Sunset Promo"
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover opacity-75"

@@ -92,7 +92,7 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
       <div
         className="flex-1 relative flex items-center justify-center py-10 px-4 min-h-[560px]"
         style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url('/src/assets/images/wf_scenic_backdrop_1791067224285.jpg')`,
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url('/assets/images/wf_scenic_backdrop_1791067224285.jpg')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}

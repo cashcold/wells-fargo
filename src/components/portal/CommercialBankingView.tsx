@@ -86,7 +86,7 @@ export const CommercialBankingView: React.FC<CommercialBankingViewProps> = ({
         {/* Full-bleed Executive Photography Background */}
         <div className="absolute inset-0 z-0">
           <img
-            src="/src/assets/images/wf_commercial_hero_executive_1791410543063.jpg"
+            src="/assets/images/wf_commercial_hero_executive_1791410543063.jpg"
             alt="Corporate executive looking out high-rise office window over city skyline"
             className="w-full h-full object-cover object-right lg:object-center"
           />
@@ -290,7 +290,7 @@ export const CommercialBankingView: React.FC<CommercialBankingViewProps> = ({
 
           <div className="lg:col-span-7 h-72 sm:h-84 lg:h-96 rounded-xl overflow-hidden shadow-xs">
             <img
-              src="/src/assets/images/wf_commercial_boardroom_1791410560135.jpg"
+              src="/assets/images/wf_commercial_boardroom_1791410560135.jpg"
               alt="Diverse executive board meeting around white conference table in corporate glass boardroom"
               className="w-full h-full object-cover object-center"
             />
@@ -316,7 +316,7 @@ export const CommercialBankingView: React.FC<CommercialBankingViewProps> = ({
             <div>
               <div className="h-44 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_commercial_corridor_walk_1791410577043.jpg"
+                  src="/assets/images/wf_commercial_corridor_walk_1791410577043.jpg"
                   alt="Two young corporate professionals walking along bright office glass corridor"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -355,7 +355,7 @@ export const CommercialBankingView: React.FC<CommercialBankingViewProps> = ({
             <div>
               <div className="h-44 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_commercial_cargo_ship_1791410591552.jpg"
+                  src="/assets/images/wf_commercial_cargo_ship_1791410591552.jpg"
                   alt="Large container cargo vessel loaded with multicolored shipping containers"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -383,7 +383,7 @@ export const CommercialBankingView: React.FC<CommercialBankingViewProps> = ({
             <div>
               <div className="h-44 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_commercial_cyber_phone_1791410610450.jpg"
+                  src="/assets/images/wf_commercial_cyber_phone_1791410610450.jpg"
                   alt="Hands holding smartphone confirming digital payment on office desk"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -411,7 +411,7 @@ export const CommercialBankingView: React.FC<CommercialBankingViewProps> = ({
             <div>
               <div className="h-44 overflow-hidden">
                 <img
-                  src="/src/assets/images/wf_commercial_padlock_keyboard_1791410625073.jpg"
+                  src="/assets/images/wf_commercial_padlock_keyboard_1791410625073.jpg"
                   alt="Brass padlock sitting securely on laptop keyboard with illuminated keys"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -463,7 +463,7 @@ export const CommercialBankingView: React.FC<CommercialBankingViewProps> = ({
           <div className="border border-stone-200 rounded-xl overflow-hidden bg-white shadow-2xs hover:shadow-md transition-shadow grid grid-cols-1 md:grid-cols-12 items-center">
             <div className="md:col-span-5 h-64 sm:h-72 overflow-hidden">
               <img
-                src="/src/assets/images/wf_commercial_ranger_veterans_1791410639962.jpg"
+                src="/assets/images/wf_commercial_ranger_veterans_1791410639962.jpg"
                 alt="Five business executive partners standing together in business suits at veteran banquet"
                 className="w-full h-full object-cover"
               />
@@ -490,7 +490,7 @@ export const CommercialBankingView: React.FC<CommercialBankingViewProps> = ({
           <div className="border border-stone-200 rounded-xl overflow-hidden bg-white shadow-2xs hover:shadow-md transition-shadow grid grid-cols-1 md:grid-cols-12 items-center">
             <div className="md:col-span-5 h-64 sm:h-72 overflow-hidden">
               <img
-                src="/src/assets/images/wf_commercial_hn_seafood_family_1791410655090.jpg"
+                src="/assets/images/wf_commercial_hn_seafood_family_1791410655090.jpg"
                 alt="Vintage family photograph of Asian family standing proudly at seafood enterprise"
                 className="w-full h-full object-cover"
               />

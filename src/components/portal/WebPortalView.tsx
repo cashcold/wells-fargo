@@ -460,7 +460,7 @@ export const WebPortalView: React.FC<WebPortalViewProps> = ({
               <div className="lg:col-span-5 relative">
                 <div className="relative rounded-2xl overflow-hidden shadow-lg border border-stone-200">
                   <img
-                    src="/src/assets/images/wf_hero_checking_1791070369236.jpg"
+                    src="/assets/images/wf_hero_checking_1791070369236.jpg"
                     alt="Wells Fargo Online Banking Customer with Coffee"
                     referrerPolicy="no-referrer"
                     className="w-full h-64 sm:h-72 object-cover"
@@ -528,7 +528,7 @@ export const WebPortalView: React.FC<WebPortalViewProps> = ({
             <div>
               <div className="h-44 overflow-hidden relative">
                 <img
-                  src="/src/assets/images/wf_student_bonus_1791070378807.jpg"
+                  src="/assets/images/wf_student_bonus_1791070378807.jpg"
                   alt="Clear Access Banking Student Promo"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -564,7 +564,7 @@ export const WebPortalView: React.FC<WebPortalViewProps> = ({
             <div>
               <div className="h-44 overflow-hidden relative">
                 <img
-                  src="/src/assets/images/wf_reflect_card_hero_1791070276541.jpg"
+                  src="/assets/images/wf_reflect_card_hero_1791070276541.jpg"
                   alt="Wells Fargo Credit Cards Promo"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -600,7 +600,7 @@ export const WebPortalView: React.FC<WebPortalViewProps> = ({
             <div>
               <div className="h-44 overflow-hidden relative">
                 <img
-                  src="/src/assets/images/wf_family_travel_savings_1791070297838.jpg"
+                  src="/assets/images/wf_family_travel_savings_1791070297838.jpg"
                   alt="OneKeyCash Travel Rewards Promo"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -636,7 +636,7 @@ export const WebPortalView: React.FC<WebPortalViewProps> = ({
             <div>
               <div className="h-44 overflow-hidden relative">
                 <img
-                  src="/src/assets/images/wf_man_dog_sunset_1791070307161.jpg"
+                  src="/assets/images/wf_man_dog_sunset_1791070307161.jpg"
                   alt="High Yield Savings and CDs Rates"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -674,7 +674,7 @@ export const WebPortalView: React.FC<WebPortalViewProps> = ({
         {/* Background Image with Dark Vignette Overlay */}
         <div className="absolute inset-0 z-0">
           <img
-            src="/src/assets/images/wf_autograph_sunset_1791070287983.jpg"
+            src="/assets/images/wf_autograph_sunset_1791070287983.jpg"
             alt="Wells Fargo Autograph Card Background"
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover opacity-35"
@@ -714,7 +714,7 @@ export const WebPortalView: React.FC<WebPortalViewProps> = ({
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
           <div className="md:col-span-4 rounded-xl overflow-hidden shadow-sm border border-stone-200">
             <img
-              src="/src/assets/images/wf_scam_security_1791070400473.jpg"
+              src="/assets/images/wf_scam_security_1791070400473.jpg"
               alt="Cybersecurity and Scam Awareness"
               referrerPolicy="no-referrer"
               className="w-full h-48 object-cover"
@@ -834,7 +834,7 @@ export const WebPortalView: React.FC<WebPortalViewProps> = ({
           <div className="border border-stone-200 rounded-2xl overflow-hidden bg-white shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
             <div>
               <img
-                src="/src/assets/images/wf_community_volunteers_1791067235210.jpg"
+                src="/assets/images/wf_community_volunteers_1791067235210.jpg"
                 alt="Wells Fargo Community Volunteers at Food Market"
                 referrerPolicy="no-referrer"
                 className="w-full h-56 object-cover"
@@ -864,7 +864,7 @@ export const WebPortalView: React.FC<WebPortalViewProps> = ({
           <div className="border border-stone-200 rounded-2xl overflow-hidden bg-white shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
             <div>
               <img
-                src="/src/assets/images/wf_small_business_1791070390692.jpg"
+                src="/assets/images/wf_small_business_1791070390692.jpg"
                 alt="Small Local Business Owner Supported by Wells Fargo"
                 referrerPolicy="no-referrer"
                 className="w-full h-56 object-cover"

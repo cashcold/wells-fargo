@@ -111,7 +111,7 @@ export const AboutWellsFargoView: React.FC<AboutWellsFargoViewProps> = ({
           {/* Hero Image Container */}
           <div className="relative rounded-2xl overflow-hidden shadow-xs border border-stone-200">
             <img
-              src="/src/assets/images/wf_about_hero_woman_1791568529970.jpg"
+              src="/assets/images/wf_about_hero_woman_1791568529970.jpg"
               alt="Wells Fargo Team Member Putting People and Communities First"
               className="w-full h-72 sm:h-96 md:h-[440px] lg:h-[500px] object-cover object-[center_20%]"
             />
@@ -302,7 +302,7 @@ export const AboutWellsFargoView: React.FC<AboutWellsFargoViewProps> = ({
             <div className="lg:col-span-5 flex justify-center lg:justify-end">
               <div className="relative rounded-2xl overflow-hidden shadow-sm max-w-sm sm:max-w-md bg-white border border-amber-200/40">
                 <img
-                  src="/src/assets/images/wf_about_career_balance_1791568547251.jpg"
+                  src="/assets/images/wf_about_career_balance_1791568547251.jpg"
                   alt="Wells Fargo Employee Working from Home with Companion Pet"
                   className="w-full h-auto object-cover max-h-80"
                 />
