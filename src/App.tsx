@@ -8,14 +8,12 @@ import { AskFargoModal } from './components/mobile/AskFargoModal';
 import { SignatureCardModal } from './components/portal/SignatureCardModal';
 import { AccountOpenFlow } from './components/mobile/AccountOpenFlow';
 import { AndroidWorkflowsModal } from './components/workflow/AndroidWorkflowsModal';
-import { MobileShell } from './components/mobile/MobileShell';
-import { Monitor, Smartphone, Sparkles, HelpCircle } from 'lucide-react';
+import { Sparkles, HelpCircle } from 'lucide-react';
 
 export default function App() {
   const [userData, setUserData] = useState<UserProfile>(INITIAL_USER_DATA);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [webSection, setWebSection] = useState<'banking' | 'public'>('public');
-  const [deviceMode, setDeviceMode] = useState<'web' | 'phone'>('web');
   const [isSignOnOpen, setIsSignOnOpen] = useState(false);
   const [isFargoOpen, setIsFargoOpen] = useState(false);
   const [isSignatureCardOpen, setIsSignatureCardOpen] = useState(false);
@@ -101,37 +99,9 @@ export default function App() {
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans selection:bg-[#d71e28] selection:text-white">
       {/* Base Web Banking is the root layout (No top developer bar) */}
-      {/* Main Content: Android Phone simulation vs Web Banking Portal */}
+      {/* Main Content: Web Banking Portal & Dashboard */}
       <div className="flex-1 w-full">
-        {deviceMode === 'phone' ? (
-          <div className="min-h-screen bg-stone-900 flex flex-col items-center justify-start py-6 px-2 sm:px-6">
-            <div className="w-full max-w-[420px] flex items-center justify-between pb-3 text-stone-300 text-xs px-2">
-              <span className="font-semibold text-white flex items-center gap-1.5">
-                <Smartphone className="w-4 h-4 text-emerald-400" />
-                <span>Android Phone Simulation</span>
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setDeviceMode('web')}
-                  className="bg-[#d71e28] hover:bg-red-700 text-white px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors flex items-center gap-1 cursor-pointer"
-                >
-                  <Monitor className="w-3 h-3" />
-                  <span>Web View</span>
-                </button>
-              </div>
-            </div>
-
-            <MobileShell
-              userData={userData}
-              onUpdateUserData={setUserData}
-              onSignOff={handleSignOff}
-              onOpenSignOn={() => setIsSignOnOpen(true)}
-              isStandalonePhoneFrame={true}
-              onSwitchToWeb={() => setDeviceMode('web')}
-              onOpenWorkflows={() => setIsWorkflowsOpen(true)}
-            />
-          </div>
-        ) : webSection === 'banking' && isLoggedIn ? (
+        {webSection === 'banking' && isLoggedIn ? (
           <WebBankingDashboard
             userData={userData}
             onUpdateUserData={setUserData}
@@ -165,34 +135,6 @@ export default function App() {
             onDismissSignedOff={() => setJustSignedOff(false)}
           />
         )}
-      </div>
-
-      {/* Floating Device Mode Switcher (Web Desktop vs Android Phone) */}
-      <div className="fixed bottom-4 right-4 z-40 bg-stone-900/90 hover:bg-stone-900 backdrop-blur-md text-white p-1 rounded-full shadow-2xl border border-stone-700/60 flex items-center gap-1 transition-all">
-        <button
-          onClick={() => setDeviceMode('web')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-            deviceMode === 'web'
-              ? 'bg-[#d71e28] text-white shadow-xs'
-              : 'text-stone-300 hover:text-white'
-          }`}
-          title="Switch to Web Banking View"
-        >
-          <Monitor className="w-3.5 h-3.5" />
-          <span>Web View</span>
-        </button>
-        <button
-          onClick={() => setDeviceMode('phone')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-            deviceMode === 'phone'
-              ? 'bg-[#d71e28] text-white shadow-xs'
-              : 'text-stone-300 hover:text-white'
-          }`}
-          title="Switch to Android Phone View"
-        >
-          <Smartphone className="w-3.5 h-3.5" />
-          <span>Android Phone</span>
-        </button>
       </div>
 
       {/* Sign On Modal with scenic background */}
