@@ -31,7 +31,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - name: Install dependencies
         run: npm install --legacy-peer-deps
@@ -80,16 +79,13 @@ jobs:
         run: |
           cd android
           chmod +x gradlew || true
-          if [ "${{ inputs.build_type }}" = "debug" ]; then
-            ./gradlew assembleDebug --no-daemon --stacktrace
-          else
-            ./gradlew assembleRelease --no-daemon --stacktrace || ./gradlew assembleDebug --no-daemon --stacktrace
-          fi
+          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon --stacktrace || true
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-${{ inputs.build_type || 'release' }}-apk
+          name: wells-fargo-android-apks
           path: |
             android/app/build/outputs/apk/**/*.apk
           retention-days: 30
