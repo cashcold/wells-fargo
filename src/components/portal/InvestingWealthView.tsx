@@ -12,13 +12,22 @@ import {
   PieChart,
   Smartphone,
   Info,
+  Landmark,
 } from 'lucide-react';
+import { UserProfile } from '../../types/banking';
+import { INITIAL_USER_DATA } from '../../data/mockData';
+import { WellsTradeAccountChoiceView } from './WellsTradeAccountChoiceView';
+import { TreasuryBillView } from './TreasuryBillView';
 
 interface InvestingWealthViewProps {
   onOpenSignOn: () => void;
-  onOpenAccountForm: () => void;
+  onOpenAccountForm: (accountType?: string) => void;
   isLoggedIn: boolean;
   userName: string;
+  userData?: UserProfile;
+  onUpdateUserData?: (updated: UserProfile) => void;
+  onTalkToAssistant?: (prompt: string) => void;
+  initialSubTab?: 'investing' | 'wellstrade' | 'treasury' | 'private-wealth';
 }
 
 export const InvestingWealthView: React.FC<InvestingWealthViewProps> = ({
@@ -26,15 +35,21 @@ export const InvestingWealthView: React.FC<InvestingWealthViewProps> = ({
   onOpenAccountForm,
   isLoggedIn,
   userName,
+  userData = INITIAL_USER_DATA,
+  onUpdateUserData,
+  onTalkToAssistant,
+  initialSubTab = 'investing',
 }) => {
-  const [subTab, setSubTab] = useState<'investing' | 'private-wealth'>('investing');
+  const [subTab, setSubTab] = useState<'investing' | 'wellstrade' | 'treasury' | 'private-wealth'>(
+    initialSubTab
+  );
   const [activeModal, setActiveModal] = useState<string | null>(null);
 
   return (
     <div className="bg-white text-stone-900 flex flex-col font-sans">
-      {/* Sub-Navigation Bar matching Screenshot 1: Investing | Private Wealth */}
-      <div className="bg-white border-b border-stone-200 text-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-8 py-2.5">
+      {/* Sub-Navigation Bar: Investing Overview | Choose WellsTrade Account | U.S. Treasury Bills | Private Wealth */}
+      <div className="bg-white border-b border-stone-200 text-xs sticky top-24 sm:top-28 z-20 shadow-2xs">
+        <div className="tab-scroll-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-6 sm:gap-8 py-2.5 text-xs whitespace-nowrap">
           <button
             onClick={() => setSubTab('investing')}
             className={`cursor-pointer transition-colors ${
@@ -43,7 +58,30 @@ export const InvestingWealthView: React.FC<InvestingWealthViewProps> = ({
                 : 'text-stone-600 hover:text-stone-900 font-medium'
             }`}
           >
-            Investing
+            Investing Overview
+          </button>
+          <button
+            onClick={() => setSubTab('wellstrade')}
+            className={`cursor-pointer transition-colors ${
+              subTab === 'wellstrade'
+                ? 'text-stone-900 font-bold border-b-2 border-stone-900 pb-0.5'
+                : 'text-stone-600 hover:text-stone-900 font-medium'
+            }`}
+          >
+            Choose WellsTrade<sup>®</sup> Account
+          </button>
+          <button
+            onClick={() => setSubTab('treasury')}
+            className={`cursor-pointer transition-colors flex items-center gap-1.5 ${
+              subTab === 'treasury'
+                ? 'text-[#d71e28] font-bold border-b-2 border-[#d71e28] pb-0.5'
+                : 'text-stone-700 hover:text-[#d71e28] font-semibold'
+            }`}
+          >
+            <span>U.S. Treasury Bills (T-Bills)</span>
+            <span className="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.2 rounded font-bold font-sans">
+              Auctions Live
+            </span>
           </button>
           <button
             onClick={() => setSubTab('private-wealth')}
@@ -253,18 +291,42 @@ export const InvestingWealthView: React.FC<InvestingWealthViewProps> = ({
                 </div>
                 <div className="mt-6 pt-3">
                   <button
-                    onClick={() => setActiveModal('wellstrade')}
+                    onClick={() => setSubTab('wellstrade')}
                     className="text-xs font-semibold text-[#2b2468] hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    <span>WellsTrade<sup>®</sup></span>
+                    <span>Choose WellsTrade<sup>®</sup> Account</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
             </div>
 
+            {/* Treasury Bills Highlight Banner */}
+            <div className="bg-[#fffdfa] border border-amber-300/80 rounded-xl p-4 sm:p-5 my-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-100 text-[#d71e28] flex items-center justify-center shrink-0">
+                  <Landmark className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-serif font-bold text-sm text-stone-900">
+                    Looking for High-Yield U.S. Treasury Bills (T-Bills)?
+                  </h4>
+                  <p className="text-xs text-stone-600">
+                    Appear for weekly Treasury auctions with $0 online commissions. 100% exempt from state and local taxes with discount yields up to 5.28%.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSubTab('treasury')}
+                className="bg-[#d71e28] hover:bg-[#b81620] text-white text-xs font-bold px-5 py-2 rounded-full transition-colors shrink-0 shadow-xs cursor-pointer flex items-center gap-1.5"
+              >
+                <span>Appear for Treasury Bill</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
             {/* Compare ways to invest button matching Screenshot 1 */}
-            <div className="text-center mt-9 mb-4">
+            <div className="text-center mt-5 mb-4">
               <button
                 onClick={() => setActiveModal('compare')}
                 className="bg-[#2b2468] hover:bg-[#1f194d] text-white text-xs font-semibold px-6 py-2.5 rounded-full shadow-xs transition-colors cursor-pointer"
@@ -542,6 +604,22 @@ export const InvestingWealthView: React.FC<InvestingWealthViewProps> = ({
             </div>
           </div>
         </>
+      ) : subTab === 'wellstrade' ? (
+        <WellsTradeAccountChoiceView
+          userData={userData}
+          onOpenSignOn={onOpenSignOn}
+          onOpenAccountForm={onOpenAccountForm}
+          onNavigateToTreasuryBills={() => setSubTab('treasury')}
+          onTalkToAssistant={onTalkToAssistant}
+          isLoggedIn={isLoggedIn}
+        />
+      ) : subTab === 'treasury' ? (
+        <TreasuryBillView
+          userData={userData}
+          onUpdateUserData={onUpdateUserData}
+          onOpenSignOn={onOpenSignOn}
+          isLoggedIn={isLoggedIn}
+        />
       ) : (
         /* =========================================================================
             PRIVATE WEALTH SUBTAB VIEW

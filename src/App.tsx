@@ -131,6 +131,8 @@ export default function App() {
             onOpenWorkflows={() => setIsWorkflowsOpen(true)}
             isLoggedIn={isLoggedIn}
             userName={userData.name}
+            userData={userData}
+            onUpdateUserData={setUserData}
             justSignedOff={justSignedOff}
             onDismissSignedOff={() => setJustSignedOff(false)}
           />

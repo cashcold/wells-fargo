@@ -37,7 +37,7 @@ User message: "${message}"`;
       );
 
       const geminiPromise = ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: 'gemini-2.5-flash',
         contents: prompt,
       });
 
@@ -68,6 +68,12 @@ User message: "${message}"`;
   } else if (lower.includes('deposit') || lower.includes('check')) {
     reply = `You can deposit paper checks in seconds using Wells Fargo Mobile Deposit! Your daily limit is $5,000.00 and 30-day limit is $15,000.00.`;
     action = { label: 'Deposit Checks', tab: 'deposit' };
+  } else if (lower.includes('treasury') || lower.includes('t-bill') || lower.includes('tbill') || (lower.includes('bill') && lower.includes('appear')) || lower.includes('auction')) {
+    reply = `You can appear for U.S. Treasury Bill auctions (4-wk, 8-wk, 13-wk, 26-wk) directly through Wells Fargo Advisors with $0 commission. Rates currently range from 5.08% to 5.28% and are 100% exempt from state and local taxes.`;
+    action = { label: 'Appear for Treasury Bill', tab: 'treasury' };
+  } else if (lower.includes('wellstrade') || lower.includes('brokerage') || lower.includes('ira') || lower.includes('roth')) {
+    reply = `Choose from WellsTrade Standard Account, Traditional IRA, or Roth IRA with $0 online stock/ETF trades, Treasury bill access, and Brokerage Cash Services.`;
+    action = { label: 'Choose WellsTrade Account', tab: 'wellstrade' };
   } else if (lower.includes('bill') || lower.includes('set aside') || lower.includes('save')) {
     reply = `With Set Aside, we automatically reserve funds in your account for upcoming bills so you never accidentally spend what is owed!`;
     action = { label: 'View Set Aside', tab: 'setaside' };
@@ -75,7 +81,7 @@ User message: "${message}"`;
     reply = `Your total available balance across accounts is $${userContext?.totalBalance || '22,739.40'}. Everyday Checking has $${userContext?.checkingBalance || '4,289.40'}.`;
     action = { label: 'View Balances', tab: 'accounts' };
   } else {
-    reply = `I can help you review balances, transfer funds, manage Set Aside bill goals, configure loans (from $700 up to $100M), or locate routing number 061000227. What would you like to explore?`;
+    reply = `I can help you review balances, appear for U.S. Treasury Bill auctions, choose a WellsTrade account, manage Set Aside bills, or configure loans (from $700 up to $100M). What would you like to explore?`;
   }
 
   return res.status(200).json({

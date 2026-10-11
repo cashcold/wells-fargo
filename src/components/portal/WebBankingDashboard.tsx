@@ -7,6 +7,7 @@ import {
   ArrowDownToLine,
   Search,
   ChevronRight,
+  ChevronLeft,
   Star,
   Lock,
   Phone,
@@ -46,6 +47,8 @@ import { SignatureCardModal } from './SignatureCardModal';
 import { UserDetailsModal } from './UserDetailsModal';
 import { LoanConfiguratorModal } from './LoanConfiguratorModal';
 import { downloadLoanDisclosurePdf } from '../../utils/loanPdfGenerator';
+import { TreasuryBillView } from './TreasuryBillView';
+import { WellsTradeAccountChoiceView } from './WellsTradeAccountChoiceView';
 
 interface WebBankingDashboardProps {
   userData: UserProfile;
@@ -68,7 +71,18 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
   onOpenAskFargo,
   onOpenWorkflows,
 }) => {
-  const [activeTab, setActiveTab] = useState<'accounts' | 'transfer' | 'deposit' | 'set-aside' | 'loans' | 'open-account' | 'signature-card' | 'profile'>('accounts');
+  const [activeTab, setActiveTab] = useState<
+    | 'accounts'
+    | 'transfer'
+    | 'deposit'
+    | 'set-aside'
+    | 'loans'
+    | 'treasury'
+    | 'wellstrade'
+    | 'open-account'
+    | 'signature-card'
+    | 'profile'
+  >('accounts');
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
   const [isFargoOpen, setIsFargoOpen] = useState(false);
   const [isSignatureCardOpen, setIsSignatureCardOpen] = useState(false);
@@ -79,6 +93,50 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const greeting = useGreeting();
+
+  // Scroll ref & controls for mobile/desktop navigation tabs
+  const navScrollRef = React.useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScrollButtons = React.useCallback(() => {
+    if (navScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = navScrollRef.current;
+      setCanScrollLeft(scrollLeft > 6);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 6);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    checkScrollButtons();
+    const el = navScrollRef.current;
+    if (el) {
+      el.addEventListener('scroll', checkScrollButtons, { passive: true });
+      window.addEventListener('resize', checkScrollButtons);
+      return () => {
+        el.removeEventListener('scroll', checkScrollButtons);
+        window.removeEventListener('resize', checkScrollButtons);
+      };
+    }
+  }, [checkScrollButtons]);
+
+  // Center active tab into view whenever tab changes
+  React.useEffect(() => {
+    if (navScrollRef.current) {
+      const activeBtn = navScrollRef.current.querySelector<HTMLElement>(`[data-tab="${activeTab}"]`);
+      if (activeBtn) {
+        activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+    checkScrollButtons();
+  }, [activeTab, checkScrollButtons]);
+
+  const handleScroll = (direction: 'left' | 'right') => {
+    if (navScrollRef.current) {
+      const offset = direction === 'left' ? -220 : 220;
+      navScrollRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+    }
+  };
 
   const checkingAcc = userData.accounts.find((a) => a.id === 'checking-0987') || userData.accounts[0];
   const savingsAcc = userData.accounts.find((a) => a.id === 'savings-3478') || userData.accounts[1];
@@ -394,93 +452,171 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
             </div>
           </div>
 
-          {/* Navigation Tabs on Web Banking - Compact Single Row */}
-          <nav className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1.5 pt-0.5 text-xs font-bold whitespace-nowrap scrollbar-none">
-            <button
-              onClick={() => setActiveTab('accounts')}
-              className={`px-3 py-1 rounded transition-colors ${
-                activeTab === 'accounts'
-                  ? 'bg-white text-[#d71e28] shadow-xs'
-                  : 'text-white hover:bg-white/15'
-              }`}
-            >
-              Accounts Summary
-            </button>
+          {/* Navigation Tabs on Web Banking - Compact Single Row with Smooth Scrolling & Touch Controls */}
+          <div className="relative w-full max-w-full my-0.5 overflow-hidden">
+            {/* Left Scroll Button on mobile & desktop */}
+            {canScrollLeft && (
+              <button
+                type="button"
+                onClick={() => handleScroll('left')}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 bg-[#a8131c] hover:bg-[#8e1017] text-white rounded-full flex items-center justify-center shadow-lg transition-all cursor-pointer ring-2 ring-white/40 active:scale-95"
+                aria-label="Scroll tabs left"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            )}
 
-            <button
-              onClick={() => setActiveTab('transfer')}
-              className={`px-3 py-1 rounded transition-colors ${
-                activeTab === 'transfer'
-                  ? 'bg-white text-[#d71e28] shadow-xs'
-                  : 'text-white hover:bg-white/15'
-              }`}
+            <nav
+              ref={navScrollRef}
+              className="tab-scroll-container w-full min-w-0 flex items-center gap-1.5 sm:gap-2 pb-2 pt-0.5 text-xs font-bold whitespace-nowrap scroll-smooth overflow-x-auto px-2 sm:px-4"
+              style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}
             >
-              Transfer & Pay
-            </button>
+              <button
+                data-tab="accounts"
+                onClick={() => setActiveTab('accounts')}
+                className={`px-3 py-1.5 rounded-md transition-colors shrink-0 cursor-pointer ${
+                  activeTab === 'accounts'
+                    ? 'bg-white text-[#d71e28] shadow-xs ring-1 ring-black/10'
+                    : 'text-white hover:bg-white/15'
+                }`}
+              >
+                Accounts Summary
+              </button>
 
-            <button
-              onClick={() => setActiveTab('deposit')}
-              className={`px-3 py-1 rounded transition-colors ${
-                activeTab === 'deposit'
-                  ? 'bg-white text-[#d71e28] shadow-xs'
-                  : 'text-white hover:bg-white/15'
-              }`}
-            >
-              Deposit Checks
-            </button>
+              <button
+                data-tab="transfer"
+                onClick={() => setActiveTab('transfer')}
+                className={`px-3 py-1.5 rounded-md transition-colors shrink-0 cursor-pointer ${
+                  activeTab === 'transfer'
+                    ? 'bg-white text-[#d71e28] shadow-xs ring-1 ring-black/10'
+                    : 'text-white hover:bg-white/15'
+                }`}
+              >
+                Transfer & Pay
+              </button>
 
-            <button
-              onClick={() => setActiveTab('set-aside')}
-              className={`px-3 py-1 rounded transition-colors ${
-                activeTab === 'set-aside'
-                  ? 'bg-white text-[#d71e28] shadow-xs'
-                  : 'text-white hover:bg-white/15'
-              }`}
-            >
-              Set Aside™ (Bills)
-            </button>
+              <button
+                data-tab="deposit"
+                onClick={() => setActiveTab('deposit')}
+                className={`px-3 py-1.5 rounded-md transition-colors shrink-0 cursor-pointer ${
+                  activeTab === 'deposit'
+                    ? 'bg-white text-[#d71e28] shadow-xs ring-1 ring-black/10'
+                    : 'text-white hover:bg-white/15'
+                }`}
+              >
+                Deposit Checks
+              </button>
 
-            <button
-              onClick={() => setActiveTab('loans')}
-              className={`px-3 py-1 rounded transition-colors ${
-                activeTab === 'loans'
-                  ? 'bg-white text-[#d71e28] shadow-xs'
-                  : 'text-white hover:bg-white/15'
-              }`}
-            >
-              Loans & Credit Details
-            </button>
+              <button
+                data-tab="set-aside"
+                onClick={() => setActiveTab('set-aside')}
+                className={`px-3 py-1.5 rounded-md transition-colors shrink-0 cursor-pointer ${
+                  activeTab === 'set-aside'
+                    ? 'bg-white text-[#d71e28] shadow-xs ring-1 ring-black/10'
+                    : 'text-white hover:bg-white/15'
+                }`}
+              >
+                Set Aside™ (Bills)
+              </button>
 
-            <button
-              onClick={() => setActiveTab('open-account')}
-              className={`px-3 py-1 rounded transition-colors ${
-                activeTab === 'open-account'
-                  ? 'bg-white text-[#d71e28] shadow-xs'
-                  : 'text-white hover:bg-white/15'
-              }`}
-            >
-              Open Account (JA23OU)
-            </button>
+              <button
+                data-tab="loans"
+                onClick={() => setActiveTab('loans')}
+                className={`px-3 py-1.5 rounded-md transition-colors shrink-0 cursor-pointer ${
+                  activeTab === 'loans'
+                    ? 'bg-white text-[#d71e28] shadow-xs ring-1 ring-black/10'
+                    : 'text-white hover:bg-white/15'
+                }`}
+              >
+                Loans & Credit Details
+              </button>
 
-            <button
-              onClick={() => setActiveTab('profile')}
-              className={`px-3 py-1 rounded transition-colors ${
-                activeTab === 'profile'
-                  ? 'bg-white text-[#d71e28] shadow-xs'
-                  : 'text-white hover:bg-white/15'
-              }`}
-            >
-              My Profile & Registration
-            </button>
-          </nav>
+              <button
+                data-tab="treasury"
+                onClick={() => setActiveTab('treasury')}
+                className={`px-3 py-1.5 rounded-md transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'treasury'
+                    ? 'bg-white text-[#d71e28] shadow-xs ring-1 ring-black/10'
+                    : 'text-white hover:bg-white/15'
+                }`}
+              >
+                <span>Treasury Bills (T-Bills)</span>
+                <span className="bg-[#ffcc00] text-stone-900 text-[10px] px-1.5 py-0.2 rounded font-black">
+                  Auctions
+                </span>
+              </button>
+
+              <button
+                data-tab="wellstrade"
+                onClick={() => setActiveTab('wellstrade')}
+                className={`px-3 py-1.5 rounded-md transition-colors shrink-0 cursor-pointer ${
+                  activeTab === 'wellstrade'
+                    ? 'bg-white text-[#d71e28] shadow-xs ring-1 ring-black/10'
+                    : 'text-white hover:bg-white/15'
+                }`}
+              >
+                WellsTrade<sup>®</sup> Brokerage
+              </button>
+
+              <button
+                data-tab="open-account"
+                onClick={() => setActiveTab('open-account')}
+                className={`px-3 py-1.5 rounded-md transition-colors shrink-0 cursor-pointer ${
+                  activeTab === 'open-account'
+                    ? 'bg-white text-[#d71e28] shadow-xs ring-1 ring-black/10'
+                    : 'text-white hover:bg-white/15'
+                }`}
+              >
+                Open Account (JA23OU)
+              </button>
+
+              <button
+                data-tab="profile"
+                onClick={() => setActiveTab('profile')}
+                className={`px-3 py-1.5 rounded-md transition-colors shrink-0 cursor-pointer ${
+                  activeTab === 'profile'
+                    ? 'bg-white text-[#d71e28] shadow-xs ring-1 ring-black/10'
+                    : 'text-white hover:bg-white/15'
+                }`}
+              >
+                My Profile & Registration
+              </button>
+            </nav>
+
+            {/* Right Scroll Button on mobile & desktop */}
+            {canScrollRight && (
+              <button
+                type="button"
+                onClick={() => handleScroll('right')}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 bg-[#a8131c] hover:bg-[#8e1017] text-white rounded-full flex items-center justify-center shadow-lg transition-all cursor-pointer ring-2 ring-white/40 active:scale-95"
+                aria-label="Scroll tabs right"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
       {/* Slide-out Side Drawer for Secondary Banking Tools */}
       {isSideMenuOpen && (
-        <div className="fixed inset-0 top-12 sm:top-14 z-30 bg-black/50 backdrop-blur-xs flex justify-end">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex justify-end animate-in fade-in duration-150">
           <div className="w-full max-w-xs sm:max-w-sm bg-white h-full shadow-2xl overflow-y-auto flex flex-col justify-between border-l border-stone-200 animate-in slide-in-from-right duration-200">
             <div>
+              {/* Drawer Top Header with Close Button */}
+              <div className="p-4 bg-[#d71e28] text-white flex items-center justify-between border-b border-red-700">
+                <div className="flex items-center gap-2">
+                  <WfLogo size="sm" variant="white" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Navigation Menu</span>
+                </div>
+                <button
+                  onClick={() => setIsSideMenuOpen(false)}
+                  className="p-1 rounded bg-black/20 hover:bg-black/30 text-white transition-colors cursor-pointer"
+                  aria-label="Close menu"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
               {/* Drawer User Bar */}
               <div className="bg-stone-50 p-4 border-b border-stone-200">
                 <span className="text-xs font-bold text-stone-900 block">{userData.name}</span>
@@ -488,6 +624,58 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                 <div className="mt-2 flex items-center gap-1 text-[11px] text-emerald-700 font-medium">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                   <span>256-Bit SSL Encrypted Session</span>
+                </div>
+              </div>
+
+              {/* Primary Navigation Tabs inside Mobile Drawer */}
+              <div className="p-3 bg-stone-100/90 border-b border-stone-200">
+                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-2 px-1">
+                  Banking Navigation Tabs
+                </span>
+                <div className="space-y-1">
+                  {[
+                    { id: 'accounts', label: 'Accounts Summary' },
+                    { id: 'transfer', label: 'Transfer & Pay' },
+                    { id: 'deposit', label: 'Deposit Checks' },
+                    { id: 'set-aside', label: 'Set Aside™ (Bills)' },
+                    { id: 'loans', label: 'Loans & Credit Details' },
+                    { id: 'treasury', label: 'Treasury Bills (T-Bills)', badge: 'Auctions' },
+                    { id: 'wellstrade', label: 'WellsTrade® Brokerage' },
+                    { id: 'open-account', label: 'Open Account (JA23OU)' },
+                    { id: 'profile', label: 'My Profile & Registration' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id as any);
+                        setIsSideMenuOpen(false);
+                      }}
+                      className={`w-full px-3 py-2 rounded-lg text-left text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
+                        activeTab === tab.id
+                          ? 'bg-[#d71e28] text-white shadow-xs'
+                          : 'text-stone-800 hover:bg-stone-200/70 bg-white border border-stone-200/60'
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      {tab.badge ? (
+                        <span
+                          className={`text-[9px] px-1.5 py-0.2 rounded font-black ${
+                            activeTab === tab.id
+                              ? 'bg-white text-[#d71e28]'
+                              : 'bg-[#ffcc00] text-stone-900'
+                          }`}
+                        >
+                          {tab.badge}
+                        </span>
+                      ) : (
+                        <ChevronRight
+                          className={`w-3.5 h-3.5 ${
+                            activeTab === tab.id ? 'text-white' : 'text-stone-400'
+                          }`}
+                        />
+                      )}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -804,6 +992,72 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                       {hideBalances ? '••••' : `$${(loanAcc.principalBalance || 13643.95).toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
                     </div>
                     <span className="text-[11px] text-stone-500">Outstanding principal balance</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Investments & U.S. Treasury Bills (T-Bills) Group */}
+              <div className="bg-white rounded-xl border border-stone-200 shadow-xs overflow-hidden">
+                <div className="bg-stone-50 px-5 py-3 border-b border-stone-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-sm text-stone-800 uppercase tracking-wider">
+                      Investments & U.S. Treasury Bills (T-Bills)
+                    </h3>
+                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      Full Faith & Credit
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('treasury')}
+                    className="text-xs font-semibold text-[#d71e28] hover:underline cursor-pointer"
+                  >
+                    Auction Desk &gt;
+                  </button>
+                </div>
+
+                <div className="p-5 hover:bg-stone-50/80 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                      <Landmark className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-stone-900">
+                          U.S. TREASURY BILL PORTFOLIO
+                        </span>
+                        <span className="text-xs text-stone-500 font-mono font-medium">
+                          {(userData.treasuryHoldings || []).length} Active Holdings
+                        </span>
+                      </div>
+                      <span className="text-xs text-stone-600 block mt-0.5">
+                        Discount yields up to 5.28% • 100% exempt from state/local taxes • Weekly auctions
+                      </span>
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={() => setActiveTab('treasury')}
+                          className="bg-[#d71e28] hover:bg-[#b81620] text-white text-xs font-bold px-3.5 py-1 rounded-full transition-colors cursor-pointer shadow-2xs"
+                        >
+                          Appear for Treasury Bill
+                        </button>
+                        <button
+                          onClick={() => setActiveTab('wellstrade')}
+                          className="border border-stone-300 hover:bg-stone-100 text-stone-800 text-xs font-semibold px-3 py-1 rounded-full transition-colors cursor-pointer"
+                        >
+                          WellsTrade<sup>®</sup> Brokerage
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right sm:self-center">
+                    <div className="text-xl font-normal text-stone-900 tabular-nums font-mono">
+                      {hideBalances
+                        ? '••••'
+                        : `$${(userData.treasuryHoldings || [])
+                            .reduce((sum, h) => sum + h.faceValue, 0)
+                            .toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+                    </div>
+                    <span className="text-[11px] text-stone-500">Total Par Value (at maturity)</span>
                   </div>
                 </div>
               </div>
@@ -1226,6 +1480,30 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* TAB: U.S. TREASURY BILLS (T-BILLS) AUCTION DESK */}
+        {activeTab === 'treasury' && (
+          <div className="space-y-6">
+            <TreasuryBillView
+              userData={userData}
+              onUpdateUserData={onUpdateUserData}
+              isLoggedIn={true}
+            />
+          </div>
+        )}
+
+        {/* TAB: CHOOSE WELLSTRADE ACCOUNT */}
+        {activeTab === 'wellstrade' && (
+          <div className="space-y-6">
+            <WellsTradeAccountChoiceView
+              userData={userData}
+              onOpenAccountForm={onOpenSignatureCard}
+              onNavigateToTreasuryBills={() => setActiveTab('treasury')}
+              onTalkToAssistant={() => setIsFargoOpen(true)}
+              isLoggedIn={true}
+            />
           </div>
         )}
 

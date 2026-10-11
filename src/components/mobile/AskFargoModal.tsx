@@ -110,6 +110,20 @@ export const AskFargoModal: React.FC<AskFargoModalProps> = ({
           text: `You currently have 5 bills in Set Aside. Your Phone bill ($89.00) is ready to pay in 1 day, and Gym Membership ($45.00) is scheduled in 3 days.`,
           action: { label: 'Go to Set Aside', tab: 'set-aside' },
         };
+      } else if (lower.includes('treasury') || lower.includes('t-bill') || lower.includes('tbill') || (lower.includes('bill') && lower.includes('appear')) || lower.includes('auction')) {
+        reply = {
+          id: String(Date.now() + 1),
+          sender: 'fargo',
+          text: `You can appear for U.S. Treasury Bill auctions (4-wk, 8-wk, 13-wk, 26-wk, 52-wk) directly with $0 commission. Rates currently range from 5.08% to 5.28% and are 100% exempt from state and local income taxes!`,
+          action: { label: 'Appear for Treasury Bill', tab: 'treasury' },
+        };
+      } else if (lower.includes('wellstrade') || lower.includes('brokerage') || lower.includes('ira') || lower.includes('roth')) {
+        reply = {
+          id: String(Date.now() + 1),
+          sender: 'fargo',
+          text: `You can choose a WellsTrade Standard Account, Traditional IRA, or Roth IRA with $0 online stock and ETF commissions, Treasury trading, and integrated Brokerage Cash Services.`,
+          action: { label: 'Choose WellsTrade Account', tab: 'wellstrade' },
+        };
       } else if (lower.includes('loan') || lower.includes('borrow') || lower.includes('limit') || lower.includes('credit line')) {
         reply = {
           id: String(Date.now() + 1),
@@ -369,7 +383,7 @@ export const AskFargoModal: React.FC<AskFargoModalProps> = ({
               <div className="pt-2">
                 <span className="text-[11px] text-stone-500 font-medium block mb-1.5">Suggested Questions:</span>
                 <div className="flex flex-wrap gap-1.5 mb-3">
-                  {['What is my routing number?', 'How do I deposit a check?', 'What are the loan limits?', 'Show upcoming bills'].map(
+                  {['What is my routing number?', 'Appear for Treasury Bill', 'Choose WellsTrade account', 'How do I deposit a check?', 'What are loan limits?'].map(
                     (prompt) => (
                       <button
                         key={prompt}

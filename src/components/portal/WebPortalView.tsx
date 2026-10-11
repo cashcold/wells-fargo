@@ -33,6 +33,7 @@ import { CommercialBankingView } from './CommercialBankingView';
 import { CorporateInvestmentBankingView } from './CorporateInvestmentBankingView';
 import { AboutWellsFargoView } from './AboutWellsFargoView';
 import { OnlineMobileSecurityModal } from '../common/OnlineMobileSecurityModal';
+import { UserProfile } from '../../types/banking';
 
 interface WebPortalViewProps {
   onOpenSignOn: () => void;
@@ -43,6 +44,8 @@ interface WebPortalViewProps {
   onOpenWorkflows?: () => void;
   isLoggedIn: boolean;
   userName: string;
+  userData?: UserProfile;
+  onUpdateUserData?: (updated: UserProfile) => void;
   justSignedOff?: boolean;
   onDismissSignedOff?: () => void;
 }
@@ -56,6 +59,8 @@ export const WebPortalView: React.FC<WebPortalViewProps> = ({
   onOpenWorkflows,
   isLoggedIn,
   userName,
+  userData,
+  onUpdateUserData,
   justSignedOff = false,
   onDismissSignedOff,
 }) => {
@@ -64,12 +69,19 @@ export const WebPortalView: React.FC<WebPortalViewProps> = ({
   const [activeCategory, setActiveCategory] = useState<string>('About');
   const [showScamTipsModal, setShowScamTipsModal] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [investingSubTab, setInvestingSubTab] = useState<'investing' | 'wellstrade' | 'treasury' | 'private-wealth'>('investing');
 
   React.useEffect(() => {
     try {
       const hash = window.location.hash.toLowerCase();
       const path = window.location.pathname.toLowerCase();
-      if (hash.includes('about') || path.includes('about')) {
+      if (hash.includes('treasury') || path.includes('treasury') || hash.includes('tbill') || path.includes('t-bill')) {
+        setActiveCategory('Investing & Wealth');
+        setInvestingSubTab('treasury');
+      } else if (hash.includes('wellstrade') || path.includes('wellstrade') || hash.includes('brokerage')) {
+        setActiveCategory('Investing & Wealth');
+        setInvestingSubTab('wellstrade');
+      } else if (hash.includes('about') || path.includes('about')) {
         setActiveCategory('About');
       } else if (hash.includes('corporate') || path.includes('corporate') || hash.includes('cib')) {
         setActiveCategory('Corporate');
@@ -211,7 +223,7 @@ export const WebPortalView: React.FC<WebPortalViewProps> = ({
 
       {/* Primary Category Navigation Bar matching Screenshot 1 */}
       <nav className="bg-white border-b border-stone-200 sticky top-14 sm:top-16 z-30 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-6 sm:gap-8 overflow-x-auto text-xs whitespace-nowrap scrollbar-none py-1">
+        <div className="tab-scroll-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-6 sm:gap-8 text-xs whitespace-nowrap py-1">
           {[
             { id: 'Personal', label: 'Personal' },
             { id: 'Investing & Wealth', label: 'Investing & Wealth Management' },
@@ -386,6 +398,10 @@ export const WebPortalView: React.FC<WebPortalViewProps> = ({
           onOpenAccountForm={onOpenAccountForm}
           isLoggedIn={isLoggedIn}
           userName={userName}
+          userData={userData}
+          onUpdateUserData={onUpdateUserData}
+          onTalkToAssistant={onOpenFargoInsights}
+          initialSubTab={investingSubTab}
         />
       ) : activeCategory === 'Business' ? (
         <BusinessBankingView

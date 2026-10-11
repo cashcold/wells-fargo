@@ -152,6 +152,55 @@ export interface EnrollmentFormData {
   c2ManualSubmit: boolean;
 }
 
+export type TBillTerm = '4-Week' | '8-Week' | '13-Week' | '17-Week' | '26-Week' | '52-Week';
+
+export interface TreasuryBill {
+  id: string;
+  term: TBillTerm;
+  termDays: number;
+  cusip: string;
+  auctionDate: string;
+  issueDate: string;
+  maturityDate: string;
+  discountRate: number; // e.g. 5.18%
+  investmentYield: number; // e.g. 5.29%
+  pricePer1000: number; // e.g. 986.91
+  minPurchase: number; // $1,000
+  increment: number; // $1,000
+  status: 'Auction Open' | 'Upcoming Auction' | 'Secondary Market';
+  auctionClosingTime: string; // e.g. "11:00 AM ET"
+}
+
+export interface TreasuryTenderOrder {
+  orderId: string;
+  tBillId: string;
+  cusip: string;
+  term: TBillTerm;
+  faceValue: number; // par value
+  discountPrice: number; // actual amount paid
+  totalDiscount: number; // interest earned at maturity
+  discountRate: number;
+  investmentYield: number;
+  tenderType: 'Non-Competitive' | 'Competitive';
+  bidYield?: number;
+  autoRoll: boolean; // automatic reinvestment at maturity
+  fundingAccountId: string;
+  fundingAccountName: string;
+  status: 'Awarded / Active' | 'Tender Submitted' | 'Matured';
+  submittedAt: string;
+  settlementDate: string;
+  maturityDate: string;
+  confirmationNumber: string;
+}
+
+export interface VoiceNote {
+  id: string;
+  title: string;
+  text: string;
+  createdAt: string;
+  tags?: string[];
+}
+
 export interface UserProfile {
   name: string;
   greetingTime: 'morning' | 'afternoon' | 'evening';
@@ -164,4 +213,6 @@ export interface UserProfile {
   bills: SetAsideBill[];
   recentDeposits: CheckDepositRecord[];
   registrationData?: EnrollmentFormData;
+  treasuryHoldings?: TreasuryTenderOrder[];
+  voiceNotes?: VoiceNote[];
 }
