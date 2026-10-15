@@ -18,10 +18,10 @@ export default async function handler(req: any, res: any) {
       const prompt = `You are Fargo, Wells Fargo's AI banking assistant.
 The customer's name is ${userContext?.name || 'Customer'}.
 Available accounts:
-- Everyday Checking (..0987, balance: $${userContext?.checkingBalance || '4,289.40'})
-- Way2Save Savings (..3478, balance: $${userContext?.savingsBalance || '18,450.00'})
-- Active Cash Credit (..8821)
-- Wells Fargo Auto & Personal Loan (..5821)
+- Everyday Checking (balance: $${userContext?.checkingBalance ?? '0.00'})
+- Way2Save Savings (balance: $${userContext?.savingsBalance ?? '0.00'})
+- Active Cash Credit
+- Wells Fargo Auto & Personal Loan
 
 Bank Details:
 - Routing number: 061000227
@@ -60,13 +60,13 @@ User message: "${message}"`;
   let action: any = undefined;
 
   if (lower.includes('routing') || lower.includes('account number')) {
-    reply = `Your Wells Fargo routing number is 061000227. Your Everyday Checking ends in 0987 and Way2Save ends in 3478.`;
+    reply = `Your Wells Fargo routing number is 061000227. Check your accounts tab for your specific account numbers.`;
     action = { label: 'View Accounts', tab: 'accounts' };
   } else if (lower.includes('loan') || lower.includes('borrow') || lower.includes('credit line') || lower.includes('limit')) {
     reply = `You can configure your Wells Fargo loan starting from $700.00 USD up to our highest allowable facility of $100,000,000.00 USD (100 Million) with instant Truth-in-Lending PDF generation.`;
     action = { label: 'Configure Loans', tab: 'loans' };
   } else if (lower.includes('deposit') || lower.includes('check')) {
-    reply = `You can deposit paper checks in seconds using Wells Fargo Mobile Deposit! Your daily limit is $5,000.00 and 30-day limit is $15,000.00.`;
+    reply = `You can deposit paper checks in seconds using Wells Fargo Mobile Deposit! Deposits are verified and approved by Bank Operations before credit.`;
     action = { label: 'Deposit Checks', tab: 'deposit' };
   } else if (lower.includes('treasury') || lower.includes('t-bill') || lower.includes('tbill') || (lower.includes('bill') && lower.includes('appear')) || lower.includes('auction')) {
     reply = `You can appear for U.S. Treasury Bill auctions (4-wk, 8-wk, 13-wk, 26-wk) directly through Wells Fargo Advisors with $0 commission. Rates currently range from 5.08% to 5.28% and are 100% exempt from state and local taxes.`;
@@ -78,7 +78,7 @@ User message: "${message}"`;
     reply = `With Set Aside, we automatically reserve funds in your account for upcoming bills so you never accidentally spend what is owed!`;
     action = { label: 'View Set Aside', tab: 'setaside' };
   } else if (lower.includes('balance') || lower.includes('how much')) {
-    reply = `Your total available balance across accounts is $${userContext?.totalBalance || '22,739.40'}. Everyday Checking has $${userContext?.checkingBalance || '4,289.40'}.`;
+    reply = `Your total available balance across accounts is $${userContext?.totalBalance ?? '0.00'}. Everyday Checking has $${userContext?.checkingBalance ?? '0.00'}.`;
     action = { label: 'View Balances', tab: 'accounts' };
   } else {
     reply = `I can help you review balances, appear for U.S. Treasury Bill auctions, choose a WellsTrade account, manage Set Aside bills, or configure loans (from $700 up to $100M). What would you like to explore?`;

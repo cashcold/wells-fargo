@@ -59,6 +59,7 @@ interface WebBankingDashboardProps {
   onOpenAccountOpenFlow: () => void;
   onOpenAskFargo: () => void;
   onOpenWorkflows?: () => void;
+  onOpenAdminPortal?: () => void;
 }
 
 export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
@@ -70,6 +71,7 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
   onOpenAccountOpenFlow,
   onOpenAskFargo,
   onOpenWorkflows,
+  onOpenAdminPortal,
 }) => {
   const [activeTab, setActiveTab] = useState<
     | 'accounts'
@@ -138,10 +140,48 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
     }
   };
 
-  const checkingAcc = userData.accounts.find((a) => a.id === 'checking-0987') || userData.accounts[0];
-  const savingsAcc = userData.accounts.find((a) => a.id === 'savings-3478') || userData.accounts[1];
-  const creditAcc = userData.accounts.find((a) => a.type === 'credit') || userData.accounts[2];
-  const loanAcc = userData.accounts.find((a) => a.type === 'loan') || userData.accounts[3];
+  const checkingAcc =
+    userData.accounts.find((a) => a.type === 'checking') ||
+    userData.accounts[0] || {
+      id: 'checking-0987',
+      name: 'EVERYDAY CHECKING',
+      accountNumber: '..0987',
+      routingNumber: '061000227',
+      type: 'checking' as const,
+      availableBalance: 0,
+      currentBalance: 0,
+      transactions: [],
+    };
+  const savingsAcc =
+    userData.accounts.find((a) => a.type === 'savings') ||
+    userData.accounts[1] || {
+      id: 'savings-3478',
+      name: 'WAY2SAVE SAVINGS',
+      accountNumber: '..3478',
+      routingNumber: '061000227',
+      type: 'savings' as const,
+      availableBalance: 0,
+      currentBalance: 0,
+      transactions: [],
+    };
+  const creditAcc = userData.accounts.find((a) => a.type === 'credit') || null;
+  const loanAcc =
+    userData.accounts.find((a) => a.type === 'loan') || {
+      id: 'loan-5821',
+      name: 'WELLS FARGO AUTO & PERSONAL LOAN',
+      accountNumber: '..5821',
+      routingNumber: '061000227',
+      type: 'loan' as const,
+      availableBalance: 0,
+      principalBalance: 0,
+      nextPaymentDue: '10/31/2026',
+      nextPaymentAmount: 0,
+      principalAndInterest: 0,
+      pastDueAmount: 0,
+      totalAmountDue: 0,
+      autopayEnabled: false,
+      transactions: [],
+    };
 
   const totalLiquid = (checkingAcc?.availableBalance || 0) + (savingsAcc?.availableBalance || 0);
 
@@ -246,31 +286,10 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
   };
 
   const handleDepositComplete = (record: CheckDepositRecord) => {
-    const updatedAccounts = userData.accounts.map((acc) => {
-      if (acc.id === record.targetAccountId) {
-        return {
-          ...acc,
-          availableBalance: acc.availableBalance + record.availableTodayAmount,
-          transactions: [
-            {
-              id: `tx-dep-${Date.now()}`,
-              date: new Date().toLocaleDateString('en-US'),
-              description: `MOBILE & WEB CHECK DEPOSIT - CONF #${record.confirmationNumber}`,
-              amount: record.amount,
-              type: 'credit' as const,
-              category: 'Income' as const,
-            },
-            ...acc.transactions,
-          ],
-        };
-      }
-      return acc;
-    });
-
+    // Deposit is pending admin approval - do NOT credit balance yet
     onUpdateUserData({
       ...userData,
-      accounts: updatedAccounts,
-      recentDeposits: [record, ...userData.recentDeposits],
+      recentDeposits: [record, ...(userData.recentDeposits || [])],
     });
   };
 
@@ -399,6 +418,18 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Admin Portal Button */}
+              {onOpenAdminPortal && (
+                <button
+                  onClick={onOpenAdminPortal}
+                  className="inline-flex items-center gap-1.5 bg-black/35 hover:bg-black/50 text-amber-300 px-2.5 py-1.5 rounded-full text-xs font-bold transition-colors border border-amber-300/40 shadow-xs cursor-pointer"
+                  title="Open Admin Operations Console"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="hidden sm:inline">Admin Portal</span>
+                </button>
+              )}
+
               {/* View Registration & Profile Details Button */}
               <button
                 onClick={() => setIsUserDetailsOpen(true)}
@@ -681,6 +712,22 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
 
               {/* Drawer Menu Links */}
               <div className="divide-y divide-stone-100 text-xs">
+                {onOpenAdminPortal && (
+                  <button
+                    onClick={() => {
+                      setIsSideMenuOpen(false);
+                      onOpenAdminPortal();
+                    }}
+                    className="w-full px-4 py-3 text-left font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-amber-700" />
+                      <span>Admin Operations & Approvals (admin12345@)</span>
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-amber-600" />
+                  </button>
+                )}
+
                 <button
                   onClick={() => {
                     setIsSideMenuOpen(false);
@@ -918,38 +965,62 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                   </h3>
                   <div className="flex items-center gap-1 text-xs font-semibold text-amber-700">
                     <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                    <span>${creditAcc.rewardsBalance?.toFixed(2)} Cash Rewards</span>
+                    <span>${(creditAcc?.rewardsBalance || 0).toFixed(2)} Cash Rewards</span>
                   </div>
                 </div>
 
-                <div
-                  onClick={() => setSelectedAccount(creditAcc)}
-                  className="p-5 hover:bg-stone-50/80 transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center shrink-0 mt-0.5">
-                      <CreditCard className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-stone-900 group-hover:text-[#d71e28] transition-colors">
-                          {creditAcc.name}
-                        </span>
-                        <span className="text-xs text-stone-500 font-mono font-medium">{creditAcc.accountNumber}</span>
+                {creditAcc ? (
+                  <div
+                    onClick={() => setSelectedAccount(creditAcc)}
+                    className="p-5 hover:bg-stone-50/80 transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <CreditCard className="w-5 h-5" />
                       </div>
-                      <span className="text-xs text-stone-500 block mt-0.5">
-                        2% Unlimited Cash Back on Purchases • Next payment due 10/24/2026
-                      </span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-stone-900 group-hover:text-[#d71e28] transition-colors">
+                            {creditAcc.name}
+                          </span>
+                          <span className="text-xs text-stone-500 font-mono font-medium">{creditAcc.accountNumber}</span>
+                        </div>
+                        <span className="text-xs text-stone-500 block mt-0.5">
+                          2% Unlimited Cash Back on Purchases • Next payment due 10/24/2026
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="text-right sm:self-center">
-                    <div className="text-xl font-normal text-stone-900 tabular-nums">
-                      {hideBalances ? '••••' : `$${creditAcc.availableBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+                    <div className="text-right sm:self-center">
+                      <div className="text-xl font-normal text-stone-900 tabular-nums">
+                        {hideBalances ? '••••' : `$${creditAcc.availableBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+                      </div>
+                      <span className="text-[11px] text-stone-500">Current balance</span>
                     </div>
-                    <span className="text-[11px] text-stone-500">Current balance</span>
                   </div>
-                </div>
+                ) : (
+                  <div className="p-5 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center shrink-0">
+                        <CreditCard className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-sm text-stone-900 block">
+                          Wells Fargo Active Cash® Card
+                        </span>
+                        <span className="text-xs text-stone-500">
+                          Earn unlimited 2% cash rewards on purchases with $0 annual fee.
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => onOpenAccountOpenFlow()}
+                      className="bg-[#d71e28] hover:bg-[#b81620] text-white text-xs font-bold px-4 py-2 rounded-full transition-colors whitespace-nowrap"
+                    >
+                      Apply Now
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Loans Account Group (matching aesqkbioflrf1.jpeg) */}
@@ -1274,7 +1345,9 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
           <div className="max-w-2xl mx-auto bg-white rounded-xl border border-stone-200 shadow-xs p-6">
             <DepositTab
               accounts={userData.accounts}
+              userName={userData.name}
               onDepositComplete={handleDepositComplete}
+              onOpenAdminPortal={onOpenAdminPortal}
             />
           </div>
         )}

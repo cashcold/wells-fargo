@@ -53,6 +53,12 @@ export interface CheckDepositRecord {
 }
 
 export interface EnrollmentFormData {
+  // Online Banking Credentials
+  username?: string;
+  password?: string;
+  confirmPassword?: string;
+  email?: string;
+
   // Accounts
   accountType: 'Everyday Checking' | 'Way2Save Savings' | 'Checking & Savings Bundle' | 'Platinum Savings' | 'Time CD';
   initialDeposit: string;

@@ -1,0 +1,790 @@
+import React, { useState, useEffect } from 'react';
+import {
+  X,
+  ShieldCheck,
+  Lock,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Clock,
+  User,
+  RefreshCw,
+  Search,
+  Eye,
+  FileText,
+  DollarSign,
+  Landmark,
+  Building,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Filter,
+} from 'lucide-react';
+import { WfLogo } from '../common/WfLogo';
+
+interface StoredDeposit {
+  id: string;
+  userId: string;
+  userName: string;
+  targetAccountId: string;
+  targetAccountName: string;
+  amount: number;
+  confirmationNumber: string;
+  date: string;
+  frontImage: string;
+  backImage: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  adminNote?: string;
+  processedAt?: string;
+  processedBy?: string;
+}
+
+interface StoredUser {
+  id: string;
+  username: string;
+  name: string;
+  createdAt: string;
+  role: string;
+  phone?: string;
+  email?: string;
+  profile: any;
+}
+
+interface AdminPortalModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onDepositApproved?: (depositId: string, updatedUser?: any) => void;
+}
+
+export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
+  isOpen,
+  onClose,
+  onDepositApproved,
+}) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [activeTab, setActiveTab] = useState<'pending' | 'users' | 'history'>('pending');
+
+  const [deposits, setDeposits] = useState<StoredDeposit[]>([]);
+  const [users, setUsers] = useState<StoredUser[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [actionSuccessMessage, setActionSuccessMessage] = useState<string | null>(null);
+  const [selectedUserDetail, setSelectedUserDetail] = useState<StoredUser | null>(null);
+  const [rejectReasonPrompt, setRejectReasonPrompt] = useState<{ id: string } | null>(null);
+  const [rejectReason, setRejectReason] = useState('Image unreadable or endorsement missing');
+
+  const adminPassword = 'admin12345@';
+
+  useEffect(() => {
+    if (isOpen && isAuthenticated) {
+      fetchAdminData();
+    }
+  }, [isOpen, isAuthenticated]);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput.trim() === adminPassword) {
+      setIsAuthenticated(true);
+      setAuthError('');
+      fetchAdminData();
+    } else {
+      setAuthError('Invalid Admin Password. Access restricted to authorized personnel.');
+    }
+  };
+
+  const fetchAdminData = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch deposits
+      const depRes = await fetch('/api/admin/deposits', {
+        headers: { 'x-admin-key': adminPassword },
+      });
+      if (depRes.ok) {
+        const depData = await depRes.json();
+        setDeposits(depData.deposits || []);
+      } else {
+        // Fallback to public endpoint
+        const pubRes = await fetch('/api/deposits');
+        if (pubRes.ok) {
+          const pubData = await pubRes.json();
+          setDeposits(pubData.deposits || []);
+        }
+      }
+
+      // Fetch users
+      const usersRes = await fetch('/api/admin/users', {
+        headers: { 'x-admin-key': adminPassword },
+      });
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        setUsers(usersData.users || []);
+      }
+    } catch (err) {
+      console.error('Failed to load admin data:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleApproveDeposit = async (deposit: StoredDeposit) => {
+    setProcessingId(deposit.id);
+    setActionSuccessMessage(null);
+    try {
+      const res = await fetch(`/api/admin/deposits/${deposit.id}/action`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': adminPassword,
+        },
+        body: JSON.stringify({
+          action: 'APPROVE',
+          adminKey: adminPassword,
+          note: 'Approved and verified by Bank Operations Administrator',
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setActionSuccessMessage(
+          `Deposit of $${deposit.amount.toFixed(2)} for ${deposit.userName} APPROVED! Funds have been credited to account ${deposit.targetAccountId}.`
+        );
+        fetchAdminData();
+        if (onDepositApproved) {
+          onDepositApproved(deposit.id, data.user);
+        }
+      } else {
+        alert(data.error || 'Failed to approve deposit');
+      }
+    } catch (err: any) {
+      alert('Error connecting to server to approve deposit');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleRejectDeposit = async (depositId: string) => {
+    setProcessingId(depositId);
+    setActionSuccessMessage(null);
+    try {
+      const res = await fetch(`/api/admin/deposits/${depositId}/action`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': adminPassword,
+        },
+        body: JSON.stringify({
+          action: 'REJECT',
+          adminKey: adminPassword,
+          note: rejectReason,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setActionSuccessMessage(`Deposit ${depositId} has been rejected.`);
+        setRejectReasonPrompt(null);
+        fetchAdminData();
+      } else {
+        alert(data.error || 'Failed to reject deposit');
+      }
+    } catch (err: any) {
+      alert('Error connecting to server to reject deposit');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const pendingDeposits = deposits.filter((d) => d.status === 'PENDING');
+  const processedDeposits = deposits.filter((d) => d.status !== 'PENDING');
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden border border-stone-300 animate-in zoom-in-95">
+        
+        {/* Top Operations Header */}
+        <div className="bg-[#1c1917] text-white px-5 py-3.5 flex items-center justify-between border-b-2 border-[#ffcc00] shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="bg-[#d71e28] text-white p-1 rounded font-serif font-black text-xs">
+              WF
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm tracking-wide text-white">
+                  Wells Fargo Bank Operations • Administrative Portal
+                </span>
+                <span className="bg-emerald-950 text-emerald-400 border border-emerald-700/50 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  OPERATIONS CONSOLE
+                </span>
+              </div>
+              <span className="text-[11px] text-stone-400">
+                Authorized Check Deposit Approval Gateway & User Database
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {isAuthenticated && (
+              <button
+                onClick={fetchAdminData}
+                disabled={isLoading}
+                className="p-1.5 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-xs flex items-center gap-1 transition-colors"
+                title="Refresh database records"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Refresh</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 text-stone-400 hover:text-white hover:bg-stone-800 rounded-full transition-colors ml-1"
+              aria-label="Close Admin Portal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Unauthenticated Password Gate */}
+        {!isAuthenticated ? (
+          <div className="p-8 sm:p-12 text-center max-w-md mx-auto my-auto flex flex-col items-center">
+            <div className="w-16 h-16 rounded-2xl bg-red-50 text-[#d71e28] flex items-center justify-center mb-5 border border-red-200 shadow-inner">
+              <ShieldCheck className="w-8 h-8 stroke-[2.5]" />
+            </div>
+            <h3 className="text-xl font-bold text-stone-900 mb-1">Administrator Sign In</h3>
+            <p className="text-xs text-stone-600 mb-6 leading-relaxed">
+              Enter the bank administrative password to access pending deposit approvals and inspect live customer accounts stored in the database.
+            </p>
+
+            <form onSubmit={handleLogin} className="w-full space-y-4">
+              <div className="text-left">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  Admin Security Password
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    value={passwordInput}
+                    onChange={(e) => {
+                      setPasswordInput(e.target.value);
+                      setAuthError('');
+                    }}
+                    placeholder="Enter admin password"
+                    className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2.5 text-sm font-mono text-stone-900 focus:outline-none focus:border-[#d71e28] focus:ring-1 focus:ring-[#d71e28]"
+                    autoFocus
+                  />
+                  <Lock className="w-4 h-4 text-stone-400 absolute right-3.5 top-3" />
+                </div>
+                {authError && (
+                  <p className="text-xs text-red-600 mt-1.5 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{authError}</span>
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-left text-xs text-amber-900">
+                <span className="font-semibold block mb-0.5">Admin Security Prompt</span>
+                <span className="text-[11px] text-amber-800">
+                  Password configured for this deployment: <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-amber-300 font-bold">admin12345@</code>
+                </span>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-[#d71e28] hover:bg-[#b81620] text-white py-3 rounded-xl font-bold text-sm shadow-sm transition-colors cursor-pointer"
+              >
+                Authenticate & Access Console
+              </button>
+            </form>
+          </div>
+        ) : (
+          /* Authenticated Admin Management Tabs */
+          <div className="flex-1 flex flex-col min-h-0 bg-stone-50">
+            {/* Top Sub-Navigation */}
+            <div className="bg-white border-b border-stone-200 px-6 py-2.5 flex flex-wrap items-center justify-between gap-4 shrink-0">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveTab('pending')}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer ${
+                    activeTab === 'pending'
+                      ? 'bg-[#d71e28] text-white shadow-xs'
+                      : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Pending Deposits</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                      activeTab === 'pending'
+                        ? 'bg-white text-[#d71e28]'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}
+                  >
+                    {pendingDeposits.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('users')}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer ${
+                    activeTab === 'users'
+                      ? 'bg-[#d71e28] text-white shadow-xs'
+                      : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                  }`}
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>Database Registered Users</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                      activeTab === 'users'
+                        ? 'bg-white text-[#d71e28]'
+                        : 'bg-stone-200 text-stone-800'
+                    }`}
+                  >
+                    {users.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('history')}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer ${
+                    activeTab === 'history'
+                      ? 'bg-[#d71e28] text-white shadow-xs'
+                      : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                  }`}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Processed History</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-stone-200 text-stone-800 font-bold">
+                    {processedDeposits.length}
+                  </span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-stone-600">
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="font-medium">Admin Mode Active (admin12345@)</span>
+              </div>
+            </div>
+
+            {/* Action Feedback Notification */}
+            {actionSuccessMessage && (
+              <div className="bg-emerald-50 border-b border-emerald-200 px-6 py-2.5 flex items-center justify-between text-xs text-emerald-900 animate-in fade-in duration-200">
+                <div className="flex items-center gap-2 font-semibold">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{actionSuccessMessage}</span>
+                </div>
+                <button
+                  onClick={() => setActionSuccessMessage(null)}
+                  className="text-emerald-700 hover:text-emerald-900"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Tab Contents */}
+            <div className="flex-1 p-5 overflow-y-auto">
+              
+              {/* TAB 1: PENDING DEPOSITS FOR ADMIN APPROVAL */}
+              {activeTab === 'pending' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-sm text-stone-900">
+                        Check & Funds Deposits Awaiting Approval
+                      </h4>
+                      <p className="text-xs text-stone-500">
+                        Review customer submitted deposits. When you click Approve, funds are immediately credited to the customer account in the database.
+                      </p>
+                    </div>
+                  </div>
+
+                  {pendingDeposits.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-stone-200 p-10 text-center text-stone-500">
+                      <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+                      <p className="text-sm font-semibold text-stone-800">
+                        No Pending Deposits
+                      </p>
+                      <p className="text-xs text-stone-500 mt-1 max-w-sm mx-auto">
+                        All customer check deposits have been reviewed and approved. New deposits submitted via the mobile or web deposit tab will show up here.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                      {pendingDeposits.map((dep) => (
+                        <div
+                          key={dep.id}
+                          className="bg-white rounded-xl border-2 border-amber-300 p-5 shadow-sm hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="bg-amber-100 text-amber-900 font-bold text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                                  <Clock className="w-3 h-3 text-amber-700" />
+                                  Pending Admin Approval
+                                </span>
+                                <span className="text-xs font-mono text-stone-400">
+                                  Conf #{dep.confirmationNumber}
+                                </span>
+                              </div>
+                              <h5 className="font-bold text-stone-900 text-base mt-1">
+                                {dep.userName}
+                              </h5>
+                              <span className="text-xs text-stone-500 block">
+                                Target: {dep.targetAccountName} ({dep.targetAccountId}) • Submitted: {dep.date}
+                              </span>
+                            </div>
+
+                            <div className="text-right sm:self-center">
+                              <span className="text-xs text-stone-500 uppercase tracking-wider font-semibold block">
+                                Deposit Amount
+                              </span>
+                              <span className="text-2xl font-bold text-stone-900 tabular-nums">
+                                ${dep.amount.toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Check Photo Simulation Preview */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-4">
+                            {/* Front Check Visual */}
+                            <div className="bg-amber-50/70 border border-amber-200 rounded-lg p-3 text-xs">
+                              <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block mb-1">
+                                Front Check Capture
+                              </span>
+                              <div className="bg-white border border-amber-200 rounded p-2.5 shadow-2xs font-mono text-[10px] space-y-1">
+                                <div className="flex justify-between font-bold text-stone-900">
+                                  <span className="text-[#d71e28] font-serif font-black">WELLS FARGO</span>
+                                  <span>${dep.amount.toFixed(2)} USD</span>
+                                </div>
+                                <div className="text-[9px] text-stone-600">
+                                  PAY TO: {dep.userName}
+                                </div>
+                                <div className="text-[8px] text-stone-400 flex justify-between pt-1">
+                                  <span>⑆061000227⑆</span>
+                                  <span>{dep.confirmationNumber}⑈</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Back Check Visual */}
+                            <div className="bg-stone-100 border border-stone-200 rounded-lg p-3 text-xs">
+                              <span className="text-[10px] font-bold text-stone-600 uppercase tracking-wider block mb-1">
+                                Back Endorsement Capture
+                              </span>
+                              <div className="bg-white border border-stone-200 rounded p-2.5 shadow-2xs font-mono text-[10px] space-y-1">
+                                <div className="border-b border-dashed border-stone-300 pb-1">
+                                  <span className="italic text-blue-900 font-serif text-[10px] font-semibold">
+                                    {dep.userName}
+                                  </span>
+                                </div>
+                                <div className="text-[8px] text-stone-500 uppercase">
+                                  FOR WELLS FARGO MOBILE DEPOSIT ONLY
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Approval Actions */}
+                          <div className="pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-3">
+                            <span className="text-xs text-stone-500">
+                              Review check alignment and endorsement before authorizing credit.
+                            </span>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setRejectReasonPrompt({ id: dep.id })}
+                                disabled={processingId === dep.id}
+                                className="px-4 py-2 border border-red-300 hover:bg-red-50 text-red-700 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                              >
+                                <XCircle className="w-3.5 h-3.5" />
+                                <span>Reject Deposit</span>
+                              </button>
+
+                              <button
+                                onClick={() => handleApproveDeposit(dep)}
+                                disabled={processingId === dep.id}
+                                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                              >
+                                {processingId === dep.id ? (
+                                  <>
+                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                    <span>Processing Credit...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Check className="w-4 h-4 stroke-[3]" />
+                                    <span>Approve & Credit ${dep.amount.toFixed(2)}</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Rejection reason inline popover */}
+                          {rejectReasonPrompt?.id === dep.id && (
+                            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg space-y-2">
+                              <label className="text-xs font-semibold text-red-900 block">
+                                Reason for Rejection
+                              </label>
+                              <input
+                                type="text"
+                                value={rejectReason}
+                                onChange={(e) => setRejectReason(e.target.value)}
+                                className="w-full bg-white border border-red-300 rounded px-2.5 py-1.5 text-xs text-stone-900 focus:outline-none"
+                              />
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  onClick={() => setRejectReasonPrompt(null)}
+                                  className="px-2.5 py-1 text-xs text-stone-600 hover:text-stone-900"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => handleRejectDeposit(dep.id)}
+                                  className="px-3 py-1 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded"
+                                >
+                                  Confirm Rejection
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 2: DATABASE REGISTERED USERS & ACCOUNTS */}
+              {activeTab === 'users' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-sm text-stone-900">
+                        Registered User Records in Database
+                      </h4>
+                      <p className="text-xs text-stone-500">
+                        Every user registered has specific details and accounts initialized with $0.00 USD balance.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    {users.map((usr) => {
+                      const reg = usr.profile?.registrationData;
+                      const checkingAcc = usr.profile?.accounts?.find((a: any) => a.type === 'checking');
+                      const savingsAcc = usr.profile?.accounts?.find((a: any) => a.type === 'savings');
+
+                      return (
+                        <div
+                          key={usr.id}
+                          className="bg-white rounded-xl border border-stone-200 p-5 shadow-xs"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h5 className="font-bold text-stone-900 text-base">
+                                  {usr.name}
+                                </h5>
+                                <span className="bg-stone-100 text-stone-700 font-mono text-[10px] px-2 py-0.5 rounded">
+                                  @{usr.username}
+                                </span>
+                              </div>
+                              <span className="text-xs text-stone-500">
+                                User ID: {usr.id} • Registered: {new Date(usr.createdAt).toLocaleDateString('en-US')}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => setSelectedUserDetail(selectedUserDetail?.id === usr.id ? null : usr)}
+                              className="self-start sm:self-center border border-stone-300 hover:bg-stone-50 text-stone-800 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-[#d71e28]" />
+                              <span>{selectedUserDetail?.id === usr.id ? 'Hide Full Info' : 'Inspect Specific Details'}</span>
+                            </button>
+                          </div>
+
+                          {/* Accounts & Balances Summary */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-3">
+                            <div className="bg-stone-50 rounded-lg p-3 border border-stone-200">
+                              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">
+                                Everyday Checking
+                              </span>
+                              <div className="flex justify-between items-baseline mt-1">
+                                <span className="text-xs font-mono text-stone-700">
+                                  {checkingAcc?.accountNumber || '..0987'}
+                                </span>
+                                <span className="text-lg font-bold text-stone-900 tabular-nums">
+                                  ${(checkingAcc?.availableBalance ?? 0).toFixed(2)} USD
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="bg-stone-50 rounded-lg p-3 border border-stone-200">
+                              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">
+                                Way2Save Savings
+                              </span>
+                              <div className="flex justify-between items-baseline mt-1">
+                                <span className="text-xs font-mono text-stone-700">
+                                  {savingsAcc?.accountNumber || '..3478'}
+                                </span>
+                                <span className="text-lg font-bold text-stone-900 tabular-nums">
+                                  ${(savingsAcc?.availableBalance ?? 0).toFixed(2)} USD
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Expanded Specific User Details */}
+                          {selectedUserDetail?.id === usr.id && (
+                            <div className="mt-4 pt-4 border-t border-stone-200 bg-amber-50/40 rounded-xl p-4 border border-amber-200 text-xs space-y-3">
+                              <h6 className="font-bold text-stone-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                                <FileText className="w-3.5 h-3.5 text-[#d71e28]" />
+                                <span>Specific User Registration Details Stored in Database</span>
+                              </h6>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                  <span className="text-[10px] text-stone-500 font-semibold uppercase block">
+                                    Legal Residential Address
+                                  </span>
+                                  <span className="font-medium text-stone-900">
+                                    {reg?.c1StreetAddress || '1048 Montgomery St'}, {reg?.c1City || 'San Francisco'}, {reg?.c1State || 'CA'} {reg?.c1Zip || '94133'}
+                                  </span>
+                                </div>
+
+                                <div>
+                                  <span className="text-[10px] text-stone-500 font-semibold uppercase block">
+                                    Taxpayer ID / SSN
+                                  </span>
+                                  <span className="font-mono font-medium text-stone-900">
+                                    {reg?.c1Tin || '***-**-4321'}
+                                  </span>
+                                </div>
+
+                                <div>
+                                  <span className="text-[10px] text-stone-500 font-semibold uppercase block">
+                                    Primary Phone
+                                  </span>
+                                  <span className="font-medium text-stone-900">
+                                    {reg?.c1HomePhone || usr.phone || '(415) 890-2134'}
+                                  </span>
+                                </div>
+
+                                <div>
+                                  <span className="text-[10px] text-stone-500 font-semibold uppercase block">
+                                    Employer / Occupation
+                                  </span>
+                                  <span className="font-medium text-stone-900">
+                                    {reg?.c1Employer || 'Apex BioTech Corp'}
+                                  </span>
+                                </div>
+
+                                <div>
+                                  <span className="text-[10px] text-stone-500 font-semibold uppercase block">
+                                    Primary ID Document
+                                  </span>
+                                  <span className="font-medium text-stone-900">
+                                    {reg?.c1PrimaryIdDesc || "California Driver's License"} ({reg?.c1PrimaryIdState || 'CA'})
+                                  </span>
+                                </div>
+
+                                <div>
+                                  <span className="text-[10px] text-stone-500 font-semibold uppercase block">
+                                    Date of Birth
+                                  </span>
+                                  <span className="font-medium text-stone-900">
+                                    {reg?.c1Dob || '06/14/1992'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: PROCESSED DEPOSITS HISTORY */}
+              {activeTab === 'history' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-sm text-stone-900">
+                        Deposit Audit Log & Approval History
+                      </h4>
+                      <p className="text-xs text-stone-500">
+                        Complete administrative log of all cleared and rejected deposit events.
+                      </p>
+                    </div>
+                  </div>
+
+                  {processedDeposits.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-stone-200 p-8 text-center text-stone-500 text-xs">
+                      No processed deposit history recorded yet.
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-stone-200 bg-white rounded-xl border border-stone-200 overflow-hidden">
+                      {processedDeposits.map((dep) => (
+                        <div key={dep.id} className="p-4 flex items-center justify-between gap-4 text-xs">
+                          <div className="flex items-center gap-3">
+                            {dep.status === 'APPROVED' ? (
+                              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                                <CheckCircle2 className="w-4 h-4" />
+                              </div>
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-red-100 text-red-700 flex items-center justify-center shrink-0">
+                                <XCircle className="w-4 h-4" />
+                              </div>
+                            )}
+
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-stone-900">{dep.userName}</span>
+                                <span
+                                  className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                                    dep.status === 'APPROVED'
+                                      ? 'bg-emerald-100 text-emerald-800'
+                                      : 'bg-red-100 text-red-800'
+                                  }`}
+                                >
+                                  {dep.status}
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-stone-500">
+                                Conf: {dep.confirmationNumber} • {dep.adminNote || 'Processed'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="text-right">
+                            <span className="font-bold text-stone-900 text-sm tabular-nums block">
+                              ${dep.amount.toFixed(2)}
+                            </span>
+                            <span className="text-[10px] text-stone-400">
+                              {dep.processedAt ? new Date(dep.processedAt).toLocaleTimeString() : dep.date}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+};

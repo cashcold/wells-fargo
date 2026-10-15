@@ -1,22 +1,36 @@
 import React, { useState } from 'react';
-import { Camera, CheckCircle, Info, ChevronDown, Check, RefreshCw } from 'lucide-react';
+import { Camera, CheckCircle, Info, ChevronDown, Check, RefreshCw, Clock, ShieldCheck } from 'lucide-react';
 import { BankAccount, CheckDepositRecord } from '../../types/banking';
 
 interface DepositTabProps {
   accounts: BankAccount[];
+  userName?: string;
+  userId?: string;
   onDepositComplete: (record: CheckDepositRecord) => void;
+  onOpenAdminPortal?: () => void;
 }
 
-export const DepositTab: React.FC<DepositTabProps> = ({ accounts, onDepositComplete }) => {
+export const DepositTab: React.FC<DepositTabProps> = ({
+  accounts,
+  userName = 'Account Holder',
+  userId = 'usr-demo-01',
+  onDepositComplete,
+  onOpenAdminPortal,
+}) => {
   const eligibleAccounts = accounts.filter((a) => a.type === 'checking' || a.type === 'savings');
   const [selectedAccountId, setSelectedAccountId] = useState(eligibleAccounts[0]?.id || '');
-  const [amount, setAmount] = useState('100.00');
+  const [amount, setAmount] = useState('250.00');
   const [hasFrontPhoto, setHasFrontPhoto] = useState(false);
   const [hasBackPhoto, setHasBackPhoto] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRecord, setSubmittedRecord] = useState<CheckDepositRecord | null>(null);
 
-  const selectedAccount = eligibleAccounts.find((a) => a.id === selectedAccountId) || eligibleAccounts[0];
+  const selectedAccount = eligibleAccounts.find((a) => a.id === selectedAccountId) || eligibleAccounts[0] || {
+    id: 'checking-0987',
+    name: 'EVERYDAY CHECKING',
+    accountNumber: '..0987',
+    availableBalance: 0,
+  };
 
   const handleCaptureFront = () => {
     setHasFrontPhoto(true);
@@ -26,105 +40,164 @@ export const DepositTab: React.FC<DepositTabProps> = ({ accounts, onDepositCompl
     setHasBackPhoto(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const depositAmount = parseFloat(amount);
     if (!depositAmount || depositAmount <= 0) return;
 
     setIsSubmitting(true);
-    setTimeout(() => {
+
+    try {
+      // Real API call to post deposit to database with PENDING status
+      const res = await fetch('/api/deposits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          userName,
+          targetAccountId: selectedAccount.id,
+          targetAccountName: selectedAccount.name,
+          amount: depositAmount,
+          frontImage: 'captured_front',
+          backImage: 'captured_back',
+        }),
+      });
+
+      const data = await res.json();
+      const confirmationNumber = data.deposit?.confirmationNumber || `${Math.floor(1000000000000 + Math.random() * 9000000000000)}`;
+
+      const now = new Date();
+      const record: CheckDepositRecord = {
+        id: data.deposit?.id || `dep-${Date.now()}`,
+        confirmationNumber,
+        date:
+          now.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+          }) +
+          ' at ' +
+          now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) +
+          ' PT',
+        targetAccountId: selectedAccount.id,
+        amount: depositAmount,
+        frontImage: 'captured_front',
+        backImage: 'captured_back',
+        status: 'submitted', // PENDING review
+        creditDate: 'Pending Admin Approval',
+        availableTodayAmount: 0.00, // Not credited until approved by admin portal!
+      };
+
+      setSubmittedRecord(record);
+      onDepositComplete(record);
+    } catch (err) {
+      console.error('Failed to submit deposit API:', err);
+      // Fallback local record
       const now = new Date();
       const record: CheckDepositRecord = {
         id: `dep-${Date.now()}`,
-        confirmationNumber: '0987654321098',
-        date: now.toLocaleDateString('en-US', {
-          weekday: 'long',
-          month: 'long',
-          day: 'numeric',
-          year: 'numeric',
-        }) + ' at ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + ' PT',
+        confirmationNumber: `${Math.floor(1000000000000 + Math.random() * 9000000000000)}`,
+        date: now.toLocaleDateString('en-US') + ' at ' + now.toLocaleTimeString('en-US') + ' PT',
         targetAccountId: selectedAccount.id,
         amount: depositAmount,
         frontImage: 'captured_front',
         backImage: 'captured_back',
         status: 'submitted',
-        creditDate: now.toLocaleDateString('en-US'),
-        availableTodayAmount: Math.min(depositAmount, 400.0),
+        creditDate: 'Pending Admin Approval',
+        availableTodayAmount: 0.00,
       };
-
-      setIsSubmitting(false);
       setSubmittedRecord(record);
       onDepositComplete(record);
-    }, 600);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
     setSubmittedRecord(null);
-    setAmount('100.00');
+    setAmount('250.00');
     setHasFrontPhoto(false);
     setHasBackPhoto(false);
   };
 
-  // SUCCESS CONFIRMATION SCREEN (Matching how-it-works-submit-deposit.png)
+  // SUCCESS CONFIRMATION SCREEN: Pending Bank Operations Review
   if (submittedRecord) {
     return (
       <div className="p-6 bg-white min-h-[500px] flex flex-col justify-between animate-in fade-in duration-200">
         <div className="text-center pt-4">
           <div className="flex items-center justify-center gap-1.5 mb-6">
-            <h2 className="text-lg font-normal text-stone-900">Mobile Deposit</h2>
+            <h2 className="text-lg font-normal text-stone-900">Mobile Check Deposit</h2>
             <Info className="w-4 h-4 text-stone-400" />
           </div>
 
-          {/* Big Green Circle Checkmark */}
-          <div className="w-20 h-20 bg-[#168843] rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-            <Check className="w-11 h-11 text-white stroke-[3.5]" />
+          {/* Pending Amber Review Circle */}
+          <div className="w-20 h-20 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm ring-8 ring-amber-100">
+            <Clock className="w-11 h-11 text-white stroke-[2.5]" />
           </div>
+
+          <span className="bg-amber-100 text-amber-900 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full inline-block mb-3">
+            Pending Admin Approval
+          </span>
 
           <p className="text-sm font-semibold text-stone-900 max-w-xs mx-auto">
-            You submitted your deposit on {submittedRecord.date}.
+            Your deposit was submitted on {submittedRecord.date}.
           </p>
-          <p className="text-xs text-stone-600 mt-2 font-mono">
-            Confirmation: {submittedRecord.confirmationNumber}
+          <p className="text-xs text-stone-600 mt-1 font-mono">
+            Confirmation Number: {submittedRecord.confirmationNumber}
           </p>
 
-          <div className="mt-8 border-t border-stone-200 pt-5 max-w-xs mx-auto space-y-2.5 text-xs text-stone-700">
+          <div className="mt-6 border-t border-stone-200 pt-5 max-w-xs mx-auto space-y-2.5 text-xs text-stone-700">
             <div className="flex justify-between">
-              <span className="uppercase tracking-wider text-stone-500">To</span>
-              <span className="font-semibold text-stone-900">{selectedAccount.name} {selectedAccount.accountNumber}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="uppercase tracking-wider text-stone-500">Amount</span>
-              <span className="font-semibold text-stone-900 tabular-nums">
-                ${submittedRecord.amount.toFixed(2)}
+              <span className="uppercase tracking-wider text-stone-500">To Account</span>
+              <span className="font-semibold text-stone-900">
+                {selectedAccount.name} {selectedAccount.accountNumber}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="uppercase tracking-wider text-stone-500">Deposit Credit Date</span>
-              <span className="font-semibold text-stone-900">{submittedRecord.creditDate}</span>
+              <span className="uppercase tracking-wider text-stone-500">Deposit Amount</span>
+              <span className="font-bold text-stone-900 tabular-nums">
+                ${submittedRecord.amount.toFixed(2)} USD
+              </span>
             </div>
             <div className="flex justify-between">
-              <span className="uppercase tracking-wider text-stone-500">Available Today</span>
-              <span className="font-semibold text-stone-900 tabular-nums">
-                ${submittedRecord.availableTodayAmount.toFixed(2)} TODAY
+              <span className="uppercase tracking-wider text-stone-500">Review Status</span>
+              <span className="font-semibold text-amber-700">Awaiting Admin Verification</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="uppercase tracking-wider text-stone-500">Available Balance Credit</span>
+              <span className="font-semibold text-stone-500 italic">
+                Credited upon Admin Approval
               </span>
             </div>
           </div>
 
-          <p className="text-[11px] text-stone-500 max-w-xs mx-auto mt-6 leading-relaxed">
-            A confirmation has been sent to your primary email address and your secure inbox.
-          </p>
-
-          <div className="mt-3">
-            <a href="#tips" className="text-xs font-semibold text-[#482879] hover:underline">
-              What should I do with my check?
-            </a>
+          {/* Admin Verification Notice & Fast Access */}
+          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs max-w-sm mx-auto space-y-2">
+            <div className="flex items-center gap-2 font-bold text-amber-900">
+              <ShieldCheck className="w-4 h-4 text-amber-700 shrink-0" />
+              <span>Admin Operations Approval Required</span>
+            </div>
+            <p className="text-[11px] text-amber-800 leading-relaxed">
+              In accordance with Wells Fargo security guidelines, all check deposits are held in queue until approved by bank operations. Once approved, the funds will immediately credit to your available balance.
+            </p>
+            {onOpenAdminPortal && (
+              <button
+                type="button"
+                onClick={onOpenAdminPortal}
+                className="w-full mt-1 bg-[#1c1917] hover:bg-black text-amber-300 py-2 rounded-lg font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                <span>Open Admin Portal to Approve Deposit (admin12345@)</span>
+              </button>
+            )}
           </div>
         </div>
 
         <div className="pt-6 pb-2">
           <button
             onClick={handleReset}
-            className="w-full border border-stone-800 text-stone-900 hover:bg-stone-50 font-medium py-3 rounded-full text-sm transition-colors text-center"
+            className="w-full border border-stone-800 text-stone-900 hover:bg-stone-50 font-medium py-3 rounded-full text-sm transition-colors text-center cursor-pointer"
           >
             Deposit another check
           </button>
@@ -133,14 +206,24 @@ export const DepositTab: React.FC<DepositTabProps> = ({ accounts, onDepositCompl
     );
   }
 
-  // DEPOSIT FORM (Matching how-it-works-get-started.png)
+  // DEPOSIT FORM
   return (
     <div className="p-4 sm:p-5 bg-white min-h-[520px]">
       <div className="flex items-center justify-between pb-3 border-b border-stone-100">
         <div className="flex items-center gap-1.5">
-          <h2 className="text-lg font-normal text-stone-900">Mobile Deposit</h2>
+          <h2 className="text-lg font-normal text-stone-900">Mobile Check Deposit</h2>
           <Info className="w-4 h-4 text-stone-400" />
         </div>
+        {onOpenAdminPortal && (
+          <button
+            type="button"
+            onClick={onOpenAdminPortal}
+            className="text-[11px] text-[#d71e28] hover:underline font-semibold flex items-center gap-1"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Admin Approvals Portal</span>
+          </button>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-6">
@@ -182,7 +265,7 @@ export const DepositTab: React.FC<DepositTabProps> = ({ accounts, onDepositCompl
 
           {/* Quick preset buttons */}
           <div className="flex justify-center gap-2 mt-3">
-            {['50.00', '100.00', '250.00', '500.00'].map((val) => (
+            {['100.00', '250.00', '500.00', '1000.00'].map((val) => (
               <button
                 key={val}
                 type="button"
@@ -197,11 +280,8 @@ export const DepositTab: React.FC<DepositTabProps> = ({ accounts, onDepositCompl
           </div>
 
           <div className="mt-2.5 text-[11px] text-stone-500 space-y-0.5">
-            <p>Daily limit $5,000.00</p>
-            <p>30-day limit $15,000.00</p>
-            {parseFloat(amount) > 5000 && (
-              <p className="text-amber-700 font-medium">Notice: Amount exceeds standard $5,000 daily mobile deposit limit.</p>
-            )}
+            <p>Deposits are reviewed and approved by Bank Operations</p>
+            <p>Daily limit $5,000.00 • 30-day limit $15,000.00</p>
           </div>
         </div>
 
@@ -229,7 +309,7 @@ export const DepositTab: React.FC<DepositTabProps> = ({ accounts, onDepositCompl
                       <span className="font-serif font-bold text-[#d71e28]">WELLS FARGO</span>
                       <span className="font-bold">${amount}</span>
                     </div>
-                    <div className="text-[8px] text-stone-500">Pay to the order of: {selectedAccount.name}</div>
+                    <div className="text-[8px] text-stone-500">Pay to the order of: {userName}</div>
                     <div className="mt-1 flex items-center justify-between text-[7px] text-stone-400">
                       <span>⑆061000227⑆</span>
                       <span>0987654321098⑈</span>
@@ -260,7 +340,7 @@ export const DepositTab: React.FC<DepositTabProps> = ({ accounts, onDepositCompl
                 <div className="w-full">
                   <div className="bg-stone-100 border border-stone-300 rounded p-1.5 text-left text-[8px] font-mono text-stone-700 shadow-inner">
                     <div className="border-b border-dashed border-stone-400 pb-1 mb-1">
-                      <span className="italic font-serif text-[9px] text-blue-900">Authorized Signature</span>
+                      <span className="italic font-serif text-[9px] text-blue-900">{userName}</span>
                     </div>
                     <span className="text-[7px] text-stone-500 block leading-tight">
                       FOR WELLS FARGO MOBILE DEPOSIT ONLY
@@ -280,27 +360,19 @@ export const DepositTab: React.FC<DepositTabProps> = ({ accounts, onDepositCompl
           </div>
         </div>
 
-        {/* Deposit Policy Notice */}
-        <p className="text-[11px] text-stone-500 leading-relaxed">
-          Deposits made before 9 pm PT on business days are typically available the next day.{' '}
-          <a href="#policy" className="text-stone-700 font-semibold hover:underline">
-            About availability
-          </a>
-        </p>
-
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-3 pt-3">
           <button
             type="button"
             onClick={handleReset}
-            className="border border-stone-800 text-stone-900 hover:bg-stone-50 font-medium py-3 rounded-full text-xs transition-colors text-center"
+            className="border border-stone-800 text-stone-900 hover:bg-stone-50 font-medium py-3 rounded-full text-xs transition-colors text-center cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`font-semibold py-3 rounded-full text-xs transition-all text-center shadow-xs flex items-center justify-center gap-1.5 ${
+            className={`font-semibold py-3 rounded-full text-xs transition-all text-center shadow-xs flex items-center justify-center gap-1.5 cursor-pointer ${
               hasFrontPhoto && hasBackPhoto
                 ? 'bg-[#2b2b2b] hover:bg-black text-white'
                 : 'bg-stone-200 text-stone-500 cursor-not-allowed'
@@ -309,10 +381,10 @@ export const DepositTab: React.FC<DepositTabProps> = ({ accounts, onDepositCompl
             {isSubmitting ? (
               <>
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Processing...</span>
+                <span>Submitting for Review...</span>
               </>
             ) : (
-              'Deposit'
+              'Submit Deposit for Review'
             )}
           </button>
         </div>

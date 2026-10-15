@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Lock, KeyRound, Eye, EyeOff, Search } from 'lucide-react';
+import { X, Lock, KeyRound, Eye, EyeOff, Search, ShieldCheck } from 'lucide-react';
 import { WfLogo } from '../common/WfLogo';
 import { FdicDisclaimer } from '../common/FdicDisclaimer';
 import { useGreeting } from '../../utils/greeting';
@@ -8,8 +8,9 @@ import { OnlineMobileSecurityModal } from '../common/OnlineMobileSecurityModal';
 interface SignOnModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLoginSuccess: (username: string) => void;
+  onLoginSuccess: (username: string, profileData?: any) => void;
   onOpenEnroll?: () => void;
+  onOpenAdminPortal?: () => void;
 }
 
 export const SignOnModal: React.FC<SignOnModalProps> = ({
@@ -17,6 +18,7 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
   onClose,
   onLoginSuccess,
   onOpenEnroll,
+  onOpenAdminPortal,
 }) => {
   const greeting = useGreeting();
   const [username, setUsername] = useState('');
@@ -24,28 +26,78 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [saveUsername, setSaveUsername] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [showSecurityModal, setShowSecurityModal] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim()) return;
+    const cleanUsername = username.trim();
+    const cleanPassword = password.trim();
+
+    if (!cleanUsername || !cleanPassword) {
+      setErrorMessage('Please enter both your username and password.');
+      return;
+    }
     setIsLoading(true);
-    setTimeout(() => {
+    setErrorMessage('');
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: cleanUsername,
+          password: cleanPassword,
+        }),
+      });
+
+      const data = await res.json();
       setIsLoading(false);
-      onLoginSuccess(username.trim());
-      onClose();
-    }, 500);
+
+      if (data.isAdmin) {
+        onClose();
+        if (onOpenAdminPortal) onOpenAdminPortal();
+        return;
+      }
+
+      if (data.success && data.user) {
+        onLoginSuccess(data.user.name || cleanUsername, data.user.profile);
+        onClose();
+      } else {
+        setErrorMessage(data.error || 'Invalid username or password. Please verify your credentials or click Enroll to create an account.');
+      }
+    } catch (err) {
+      setIsLoading(false);
+      setErrorMessage('Unable to connect to authentication server. Please verify the service is running.');
+    }
   };
 
-  const handlePasskeySignOn = () => {
+  const handlePasskeySignOn = async () => {
+    const cleanUsername = username.trim();
+    if (!cleanUsername) {
+      setErrorMessage('Please enter your registered username above to sign on with a passkey.');
+      return;
+    }
+
     setIsLoading(true);
-    setTimeout(() => {
+    setErrorMessage('');
+    try {
+      const res = await fetch(`/api/user/${encodeURIComponent(cleanUsername)}`);
+      const data = await res.json();
       setIsLoading(false);
-      onLoginSuccess(username.trim() || 'Online Banking Member');
-      onClose();
-    }, 500);
+
+      if (data.success && data.user) {
+        onLoginSuccess(data.user.name || cleanUsername, data.user.profile);
+        onClose();
+      } else {
+        setErrorMessage(`User "${cleanUsername}" is not registered in our database. Please enroll to register.`);
+      }
+    } catch (err) {
+      setIsLoading(false);
+      setErrorMessage('Unable to verify passkey with authentication server.');
+    }
   };
 
   return (
@@ -62,25 +114,30 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
               onClose();
               if (onOpenEnroll) onOpenEnroll();
             }}
-            className="hidden sm:inline-flex items-center gap-1 hover:underline text-white"
+            className="hidden sm:inline-flex items-center gap-1 hover:underline text-white cursor-pointer"
           >
             <Lock className="w-3.5 h-3.5" />
             <span>Enroll</span>
           </button>
+          {onOpenAdminPortal && (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenAdminPortal();
+              }}
+              className="bg-black/20 hover:bg-black/30 text-amber-300 px-2.5 py-1 rounded-full text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Admin Portal</span>
+            </button>
+          )}
           <span className="hidden md:inline hover:underline cursor-pointer">Customer Service</span>
           <span className="hidden md:inline hover:underline cursor-pointer">ATMs/Locations</span>
           <span className="hidden sm:inline hover:underline cursor-pointer">Español</span>
-          <div className="relative hidden lg:block">
-            <input
-              type="text"
-              placeholder="Search"
-              className="bg-white text-stone-900 text-xs px-2.5 py-1 rounded-sm pr-6 w-28 focus:w-40 transition-all focus:outline-none"
-            />
-            <Search className="w-3.5 h-3.5 text-stone-500 absolute right-1.5 top-1.5" />
-          </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-black/20 rounded-full transition-colors ml-2"
+            className="p-1 hover:bg-black/20 rounded-full transition-colors ml-2 cursor-pointer"
             aria-label="Close Sign On"
           >
             <X className="w-5 h-5 text-white" />
@@ -128,7 +185,7 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setUsername('')}
-                    className="absolute right-3 top-3 text-stone-400 hover:text-stone-600"
+                    className="absolute right-3 top-3 text-stone-400 hover:text-stone-600 cursor-pointer"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -143,7 +200,7 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-xs text-stone-600 hover:text-stone-900 flex items-center gap-1"
+                  className="text-xs text-stone-600 hover:text-stone-900 flex items-center gap-1 cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   <span>{showPassword ? 'Hide' : 'Show'}</span>
@@ -153,7 +210,10 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Enter your password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setErrorMessage('');
+                }}
                 className="w-full border border-stone-300 rounded px-3 py-2.5 text-sm text-stone-900 focus:outline-none focus:border-[#d71e28] focus:ring-1 focus:ring-[#d71e28]"
                 required
               />
@@ -176,11 +236,15 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
               </label>
             </div>
 
+            {errorMessage && (
+              <p className="text-xs text-red-600 font-medium">{errorMessage}</p>
+            )}
+
             {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading || !username.trim()}
-              className="w-full mt-4 bg-[#d71e28] hover:bg-[#b81620] text-white font-medium py-3 rounded-md text-sm transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full mt-4 bg-[#d71e28] hover:bg-[#b81620] text-white font-medium py-3 rounded-md text-sm transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               {isLoading ? 'Signing on...' : 'Sign on'}
             </button>
@@ -196,7 +260,7 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
             <button
               type="button"
               onClick={handlePasskeySignOn}
-              className="w-full border border-stone-800 text-stone-900 hover:bg-stone-50 font-medium py-2.5 rounded-md text-sm transition-colors flex items-center justify-center gap-2"
+              className="w-full border border-stone-800 text-stone-900 hover:bg-stone-50 font-medium py-2.5 rounded-md text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
               <KeyRound className="w-4 h-4 text-stone-700" />
               <span>Use a passkey</span>
@@ -214,11 +278,27 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
                     onClose();
                     if (onOpenEnroll) onOpenEnroll();
                   }}
-                  className="font-medium text-[#d71e28] hover:underline"
+                  className="font-medium text-[#d71e28] hover:underline cursor-pointer"
                 >
-                  Enroll
+                  Enroll (Opens $0 Initial Balance Account)
                 </button>
               </div>
+
+              {onOpenAdminPortal && (
+                <div className="pt-2 border-t border-stone-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenAdminPortal();
+                    }}
+                    className="text-[11px] font-semibold text-stone-500 hover:text-stone-900 flex items-center justify-center gap-1 mx-auto"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Administrator Console</span>
+                  </button>
+                </div>
+              )}
             </div>
           </form>
         </div>

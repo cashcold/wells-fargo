@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { INITIAL_USER_DATA } from './data/mockData';
-import { UserProfile } from './types/banking';
+import { UserProfile, BankAccount } from './types/banking';
 import { WebBankingDashboard } from './components/portal/WebBankingDashboard';
 import { WebPortalView } from './components/portal/WebPortalView';
 import { SignOnModal } from './components/auth/SignOnModal';
@@ -8,6 +8,7 @@ import { AskFargoModal } from './components/mobile/AskFargoModal';
 import { SignatureCardModal } from './components/portal/SignatureCardModal';
 import { AccountOpenFlow } from './components/mobile/AccountOpenFlow';
 import { AndroidWorkflowsModal } from './components/workflow/AndroidWorkflowsModal';
+import { AdminPortalModal } from './components/admin/AdminPortalModal';
 import { Sparkles, HelpCircle } from 'lucide-react';
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
   const [isSignatureCardOpen, setIsSignatureCardOpen] = useState(false);
   const [isAccountOpenFlowActive, setIsAccountOpenFlowActive] = useState(false);
   const [isWorkflowsOpen, setIsWorkflowsOpen] = useState(false);
+  const [isAdminPortalOpen, setIsAdminPortalOpen] = useState(false);
   const [justSignedOff, setJustSignedOff] = useState(false);
 
   React.useEffect(() => {
@@ -26,11 +28,13 @@ export default function App() {
       const pathname = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
 
-      if (pathname.includes('/login') || pathname.includes('/signon')) {
+      if (pathname.includes('/admin') || hash.includes('admin')) {
+        setIsAdminPortalOpen(true);
+      } else if (pathname.includes('/login') || pathname.includes('/signon')) {
         setIsSignOnOpen(true);
       } else if (pathname.includes('/portal') || pathname.includes('/dashboard') || pathname.includes('/banking')) {
-        setWebSection('banking');
-        setIsLoggedIn(true);
+        // Require authentication for online banking portal
+        setIsSignOnOpen(true);
       } else if (pathname.includes('/enroll') || pathname.includes('/signature-card') || pathname.includes('/apply')) {
         setIsSignatureCardOpen(true);
       } else if (pathname.includes('/fargo')) {
@@ -45,12 +49,12 @@ export default function App() {
 
       if (hash.includes('#path=')) {
         const decoded = decodeURIComponent(hash.replace('#path=', ''));
+        if (decoded.includes('/admin')) setIsAdminPortalOpen(true);
         if (decoded.includes('/login')) setIsSignOnOpen(true);
         if (decoded.includes('/enroll')) setIsSignatureCardOpen(true);
         if (decoded.includes('/workflows') || decoded.includes('/apk')) setIsWorkflowsOpen(true);
         if (decoded.includes('/portal') || decoded.includes('/dashboard')) {
-          setWebSection('banking');
-          setIsLoggedIn(true);
+          setIsSignOnOpen(true);
         }
       }
     } catch (e) {
@@ -58,10 +62,27 @@ export default function App() {
     }
   }, []);
 
-  const handleLoginSuccess = (enteredName: string) => {
+  const handleLoginSuccess = async (enteredName: string, profileData?: any) => {
     setIsLoggedIn(true);
     setWebSection('banking');
     setJustSignedOff(false);
+
+    if (profileData) {
+      setUserData(profileData);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/user/${encodeURIComponent(enteredName)}`);
+      const data = await res.json();
+      if (data.success && data.user?.profile) {
+        setUserData(data.user.profile);
+        return;
+      }
+    } catch (err) {
+      // fallback
+    }
+
     const cleanName = enteredName.trim().replace(/_wf$/i, '');
     const displayName = cleanName
       ? cleanName.charAt(0).toUpperCase() + cleanName.slice(1)
@@ -88,17 +109,71 @@ export default function App() {
     setIsSignatureCardOpen(false);
     setIsLoggedIn(true);
     setWebSection('banking');
-    setUserData((prev) => ({
-      ...prev,
+
+    // Create fresh zero-dollar balance accounts for the newly registered user
+    const checkingNum = Math.floor(1000 + Math.random() * 9000).toString();
+    const savingsNum = Math.floor(1000 + Math.random() * 9000).toString();
+
+    const zeroAccounts: BankAccount[] = [
+      {
+        id: `checking-${checkingNum}`,
+        name: 'EVERYDAY CHECKING',
+        accountNumber: `..${checkingNum}`,
+        routingNumber: '061000227',
+        type: 'checking',
+        availableBalance: 0.00,
+        currentBalance: 0.00,
+        transactions: [],
+      },
+      {
+        id: `savings-${savingsNum}`,
+        name: 'WAY2SAVE SAVINGS',
+        accountNumber: `..${savingsNum}`,
+        routingNumber: '061000227',
+        type: 'savings',
+        availableBalance: 0.00,
+        currentBalance: 0.00,
+        transactions: [],
+      },
+    ];
+
+    setUserData({
       name: newCustomerName,
-      registrationData: fullData || prev.registrationData,
-    }));
+      greetingTime: 'afternoon',
+      ficoScore: 780,
+      ficoChange: 0,
+      ficoUpdatedDate: new Date().toLocaleDateString('en-US'),
+      unreadNotifications: 1,
+      bonusCode: 'JA23OU',
+      accounts: zeroAccounts,
+      bills: [],
+      recentDeposits: [],
+      treasuryHoldings: [],
+      voiceNotes: [],
+      registrationData: fullData,
+    });
+
     setIsAccountOpenFlowActive(true);
+  };
+
+  const handleDepositApproved = (depositId: string, updatedUser?: any) => {
+    if (updatedUser?.profile) {
+      setUserData(updatedUser.profile);
+    } else {
+      // Refresh current user data from server
+      fetch(`/api/user/${encodeURIComponent(userData.name)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.user?.profile) {
+            setUserData(data.user.profile);
+          }
+        })
+        .catch(() => {});
+    }
   };
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans selection:bg-[#d71e28] selection:text-white">
-      {/* Base Web Banking is the root layout (No top developer bar) */}
       {/* Main Content: Web Banking Portal & Dashboard */}
       <div className="flex-1 w-full">
         {webSection === 'banking' && isLoggedIn ? (
@@ -111,6 +186,7 @@ export default function App() {
             onOpenAccountOpenFlow={() => setIsAccountOpenFlowActive(true)}
             onOpenAskFargo={() => setIsFargoOpen(true)}
             onOpenWorkflows={() => setIsWorkflowsOpen(true)}
+            onOpenAdminPortal={() => setIsAdminPortalOpen(true)}
           />
         ) : (
           <WebPortalView
@@ -129,6 +205,7 @@ export default function App() {
               }
             }}
             onOpenWorkflows={() => setIsWorkflowsOpen(true)}
+            onOpenAdminPortal={() => setIsAdminPortalOpen(true)}
             isLoggedIn={isLoggedIn}
             userName={userData.name}
             userData={userData}
@@ -145,6 +222,7 @@ export default function App() {
         onClose={() => setIsSignOnOpen(false)}
         onLoginSuccess={handleLoginSuccess}
         onOpenEnroll={() => setIsSignatureCardOpen(true)}
+        onOpenAdminPortal={() => setIsAdminPortalOpen(true)}
       />
 
       {/* Ask Fargo AI Assistant Modal */}
@@ -164,6 +242,13 @@ export default function App() {
         onClose={() => setIsSignatureCardOpen(false)}
         customerName={`${userData.name}`}
         onEnrollSuccess={handleEnrollSuccess}
+      />
+
+      {/* Admin Operations & Deposit Approval Portal (Password: admin12345@) */}
+      <AdminPortalModal
+        isOpen={isAdminPortalOpen}
+        onClose={() => setIsAdminPortalOpen(false)}
+        onDepositApproved={handleDepositApproved}
       />
 
       {/* Android Workflows & APK Modal */}

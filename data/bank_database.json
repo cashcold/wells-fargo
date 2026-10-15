@@ -1,0 +1,145 @@
+{
+  "users": {
+    "usr-demo-01": {
+      "id": "usr-demo-01",
+      "username": "customer",
+      "password": "password123",
+      "name": "Account Holder",
+      "createdAt": "2026-10-15T22:28:13.656Z",
+      "role": "customer",
+      "profile": {
+        "name": "Account Holder",
+        "greetingTime": "afternoon",
+        "ficoScore": 780,
+        "ficoChange": 0,
+        "ficoUpdatedDate": "10/15/2026",
+        "unreadNotifications": 0,
+        "bonusCode": "JA23OU",
+        "accounts": [
+          {
+            "id": "checking-0987",
+            "name": "EVERYDAY CHECKING",
+            "accountNumber": "..0987",
+            "routingNumber": "061000227",
+            "type": "checking",
+            "availableBalance": 0,
+            "currentBalance": 0,
+            "transactions": []
+          },
+          {
+            "id": "savings-3478",
+            "name": "WAY2SAVE SAVINGS",
+            "accountNumber": "..3478",
+            "routingNumber": "061000227",
+            "type": "savings",
+            "availableBalance": 0,
+            "currentBalance": 0,
+            "transactions": []
+          }
+        ],
+        "bills": [],
+        "recentDeposits": [],
+        "treasuryHoldings": [],
+        "voiceNotes": []
+      }
+    },
+    "usr-1792103303106-705": {
+      "id": "usr-1792103303106-705",
+      "username": "john_doe",
+      "password": "password123",
+      "name": "John Doe",
+      "email": "john_doe@example.com",
+      "phone": "(512) 555-0100",
+      "createdAt": "2026-10-15T22:28:23.106Z",
+      "role": "customer",
+      "profile": {
+        "name": "John Doe",
+        "greetingTime": "afternoon",
+        "ficoScore": 780,
+        "ficoChange": 0,
+        "ficoUpdatedDate": "10/15/2026",
+        "unreadNotifications": 1,
+        "bonusCode": "JA23OU",
+        "accounts": [
+          {
+            "id": "checking-3818",
+            "name": "EVERYDAY CHECKING",
+            "accountNumber": "..3818",
+            "routingNumber": "061000227",
+            "type": "checking",
+            "availableBalance": 500,
+            "currentBalance": 500,
+            "transactions": [
+              {
+                "id": "tx-dep-appr-1792103315522",
+                "date": "10/15/2026",
+                "description": "MOBILE CHECK DEPOSIT APPROVED - CONF #5167373989427",
+                "amount": 500,
+                "type": "credit",
+                "category": "Income"
+              }
+            ]
+          },
+          {
+            "id": "savings-2714",
+            "name": "WAY2SAVE SAVINGS",
+            "accountNumber": "..2714",
+            "routingNumber": "061000227",
+            "type": "savings",
+            "availableBalance": 0,
+            "currentBalance": 0,
+            "transactions": []
+          }
+        ],
+        "bills": [],
+        "recentDeposits": [
+          {
+            "id": "dep-1792103307534-94",
+            "confirmationNumber": "5167373989427",
+            "date": "Thursday, October 15, 2026 at 10:28 PM PT",
+            "targetAccountId": "checking-3818",
+            "amount": 500,
+            "frontImage": "captured_front",
+            "backImage": "captured_back",
+            "status": "cleared",
+            "creditDate": "10/15/2026",
+            "availableTodayAmount": 500
+          }
+        ],
+        "treasuryHoldings": [],
+        "voiceNotes": [],
+        "registrationData": {
+          "c1FullName": "John Doe",
+          "c1StreetAddress": "123 Main St",
+          "c1City": "Austin",
+          "c1State": "TX",
+          "c1Zip": "78701",
+          "c1Tin": "***-**-1234",
+          "c1HomePhone": "(512) 555-0100",
+          "c1Employer": "Tech Solutions Inc",
+          "c1PrimaryIdDesc": "Texas DL",
+          "c1Dob": "01/15/1990"
+        }
+      }
+    }
+  },
+  "deposits": [
+    {
+      "id": "dep-1792103307534-94",
+      "userId": "usr-1792103303106-705",
+      "userName": "John Doe",
+      "targetAccountId": "checking-3818",
+      "targetAccountName": "EVERYDAY CHECKING",
+      "amount": 500,
+      "confirmationNumber": "5167373989427",
+      "date": "Thursday, October 15, 2026 at 10:28 PM PT",
+      "frontImage": "captured_front",
+      "backImage": "captured_back",
+      "status": "APPROVED",
+      "adminNote": "Approved by Bank Administrator",
+      "processedAt": "2026-10-15T22:28:35.522Z",
+      "processedBy": "Bank Admin"
+    }
+  ],
+  "version": 1
+}

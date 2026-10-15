@@ -11,6 +11,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Eye,
+  EyeOff,
+  KeyRound,
   Share2,
   RotateCcw,
   Sparkles,
@@ -131,8 +133,12 @@ export interface EnrollmentFormData {
 }
 
 const INITIAL_FORM_STATE: EnrollmentFormData = {
+  username: '',
+  password: '',
+  confirmPassword: '',
+  email: '',
   accountType: 'Checking & Savings Bundle',
-  initialDeposit: '100.00',
+  initialDeposit: '0.00',
   offerCode: 'JA23OU',
   bankName: 'Wells Fargo Bank, N.A.',
 
@@ -255,11 +261,14 @@ export const EnrollmentRegistrationModal: React.FC<EnrollmentRegistrationModalPr
   const [showFieldList, setShowFieldList] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registrationError, setRegistrationError] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
   const [signatureMode, setSignatureMode] = useState<'type' | 'draw'>('type');
 
   if (!isOpen) return null;
 
   const handleInputChange = (field: keyof EnrollmentFormData, value: any) => {
+    setRegistrationError('');
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -267,8 +276,13 @@ export const EnrollmentRegistrationModal: React.FC<EnrollmentRegistrationModalPr
   };
 
   const handlePrefillSample = () => {
+    setRegistrationError('');
     setFormData((prev) => ({
       ...prev,
+      username: 'morgan_vance',
+      password: 'vancePassword99!',
+      confirmPassword: 'vancePassword99!',
+      email: 'morgan.vance@example.com',
       c1FullName: 'Morgan Vance',
       c1StreetAddress: '1048 Montgomery St, Apt 4B',
       c1City: 'San Francisco',
@@ -288,12 +302,14 @@ export const EnrollmentRegistrationModal: React.FC<EnrollmentRegistrationModalPr
       c1SecondaryIdState: 'USA',
       c1Signature: 'Morgan Vance',
       w9Signature: 'Morgan Vance',
-      initialDeposit: '350.00',
+      initialDeposit: '0.00',
     }));
   };
 
   // Field validation and completeness
   const requiredFields: { key: keyof EnrollmentFormData; label: string; step: number }[] = [
+    { key: 'username', label: 'Online Banking Username', step: 1 },
+    { key: 'password', label: 'Online Banking Password', step: 1 },
     { key: 'c1FullName', label: 'Customer 1 Full Name', step: 1 },
     { key: 'c1StreetAddress', label: 'Customer 1 Street Address', step: 1 },
     { key: 'c1City', label: 'Customer 1 City', step: 1 },
@@ -307,21 +323,70 @@ export const EnrollmentRegistrationModal: React.FC<EnrollmentRegistrationModalPr
     { key: 'c1Signature', label: 'Customer 1 Authorized Signature', step: 4 },
   ];
 
-  const filledCount = requiredFields.filter((f) => Boolean(String(formData[f.key]).trim())).length;
+  const filledCount = requiredFields.filter((f) => Boolean(String(formData[f.key] || '').trim())).length;
   const progressPercent = Math.round((filledCount / requiredFields.length) * 100);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setRegistrationError('');
+
+    const cleanUsername = (formData.username || '').trim();
+    const cleanPassword = (formData.password || '').trim();
+    const confirmPassword = (formData.confirmPassword || '').trim();
+    const finalName = formData.c1FullName.trim() || cleanUsername || 'New Account Holder';
+
+    if (!cleanUsername || cleanUsername.length < 3) {
+      setRegistrationError('Please provide an Online Banking Username with at least 3 characters (Step 1).');
+      setStep(1);
+      return;
+    }
+
+    if (!cleanPassword || cleanPassword.length < 4) {
+      setRegistrationError('Please provide an Online Banking Password with at least 4 characters (Step 1).');
+      setStep(1);
+      return;
+    }
+
+    if (confirmPassword && cleanPassword !== confirmPassword) {
+      setRegistrationError('Passwords do not match. Please ensure both password fields match (Step 1).');
+      setStep(1);
+      return;
+    }
+
     setIsSubmitting(true);
 
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: cleanUsername,
+          password: cleanPassword,
+          registrationData: {
+            ...formData,
+            username: cleanUsername,
+            initialDeposit: '0.00',
+          },
+        }),
+      });
+
+      const data = await res.json();
       setIsSubmitting(false);
-      const finalName = formData.c1FullName.trim() || 'New Account Holder';
+
+      if (!res.ok || !data.success) {
+        setRegistrationError(data.error || 'Registration failed. Please choose another username.');
+        setStep(1);
+        return;
+      }
+
       if (onEnrollSuccess) {
         onEnrollSuccess(finalName, formData.accountType, formData);
       }
       onClose();
-    }, 900);
+    } catch (err) {
+      setIsSubmitting(false);
+      setRegistrationError('Unable to connect to the banking registration database. Please try again.');
+    }
   };
 
   const handleShareInvite = () => {
@@ -508,6 +573,96 @@ export const EnrollmentRegistrationModal: React.FC<EnrollmentRegistrationModalPr
                       <p>
                         1. Complete the information on this Consumer Account Application. 2. Sign and date where indicated. 3. Wells Fargo Services, P.O. Box 5110, Sioux Falls, SD 57117-9939. (Please do not send deposits to this address. Unable to print? Call 1-800-956-4442).
                       </p>
+                    </div>
+
+                    {/* Registration Error Notification */}
+                    {registrationError && (
+                      <div className="p-3.5 bg-red-50 border border-red-300 rounded-lg text-xs text-red-700 flex items-start gap-2 animate-in fade-in">
+                        <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-bold block">Registration Error</span>
+                          <span>{registrationError}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Online Banking Sign-On Credentials (Saved into Database) */}
+                    <div className="border border-stone-300 rounded-lg overflow-hidden shadow-xs">
+                      <div className="bg-stone-900 text-white px-4 py-2 font-bold text-xs uppercase tracking-wider flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <Lock className="w-3.5 h-3.5 text-[#ffcc00]" />
+                          <span>Online Banking Sign-On Credentials</span>
+                        </span>
+                        <span className="text-[10px] text-stone-300 font-normal">Saved to Database for Login</span>
+                      </div>
+                      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs bg-stone-50/60">
+                        <div>
+                          <label className="font-semibold text-stone-700 block mb-1">
+                            Username <span className="text-red-600">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={formData.username || ''}
+                            onChange={(e) => handleInputChange('username', e.target.value)}
+                            className="w-full border border-stone-300 bg-white rounded p-2 text-stone-900 focus:border-[#d71e28] focus:ring-1 focus:ring-[#d71e28]"
+                            placeholder="Choose your username"
+                          />
+                          <p className="text-[11px] text-stone-500 mt-1">You will use this username to sign on.</p>
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-stone-700 block mb-1">
+                            Email Address <span className="text-stone-500">(Optional)</span>
+                          </label>
+                          <input
+                            type="email"
+                            value={formData.email || ''}
+                            onChange={(e) => handleInputChange('email', e.target.value)}
+                            className="w-full border border-stone-300 bg-white rounded p-2 text-stone-900 focus:border-[#d71e28]"
+                            placeholder="name@example.com"
+                          />
+                          <p className="text-[11px] text-stone-500 mt-1">For e-statements and security updates.</p>
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="font-semibold text-stone-700 block">
+                              Password <span className="text-red-600">*</span>
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setShowRegPassword(!showRegPassword)}
+                              className="text-[11px] text-stone-600 hover:text-stone-900 flex items-center gap-1 cursor-pointer"
+                            >
+                              {showRegPassword ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                              <span>{showRegPassword ? 'Hide' : 'Show'}</span>
+                            </button>
+                          </div>
+                          <input
+                            type={showRegPassword ? 'text' : 'password'}
+                            required
+                            value={formData.password || ''}
+                            onChange={(e) => handleInputChange('password', e.target.value)}
+                            className="w-full border border-stone-300 bg-white rounded p-2 text-stone-900 focus:border-[#d71e28] focus:ring-1 focus:ring-[#d71e28]"
+                            placeholder="Create your password (min 4 chars)"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-semibold text-stone-700 block mb-1">
+                            Confirm Password <span className="text-red-600">*</span>
+                          </label>
+                          <input
+                            type={showRegPassword ? 'text' : 'password'}
+                            required
+                            value={formData.confirmPassword || ''}
+                            onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                            className="w-full border border-stone-300 bg-white rounded p-2 text-stone-900 focus:border-[#d71e28] focus:ring-1 focus:ring-[#d71e28]"
+                            placeholder="Re-enter your password"
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     {/* Account(s) I Want to Open & Bank Use Only */}
