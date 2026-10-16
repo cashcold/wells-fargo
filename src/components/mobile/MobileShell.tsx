@@ -566,6 +566,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({
         onClose={() => setSelectedAccount(null)}
         onMakePayment={handleMakeLoanPayment}
         onToggleAutopay={handleToggleAutopay}
+        userName={userData.name}
       />
 
       {/* Ask Fargo AI Assistant Modal */}

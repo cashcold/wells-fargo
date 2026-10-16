@@ -32,7 +32,7 @@ import {
   Download,
   Smartphone,
 } from 'lucide-react';
-import { UserProfile, BankAccount, CheckDepositRecord, SetAsideBill } from '../../types/banking';
+import { UserProfile, BankAccount, CheckDepositRecord, SetAsideBill, Transaction } from '../../types/banking';
 import { WfLogo } from '../common/WfLogo';
 import { FdicDisclaimer } from '../common/FdicDisclaimer';
 import { DepositTab } from '../mobile/DepositTab';
@@ -49,6 +49,8 @@ import { LoanConfiguratorModal } from './LoanConfiguratorModal';
 import { downloadLoanDisclosurePdf } from '../../utils/loanPdfGenerator';
 import { TreasuryBillView } from './TreasuryBillView';
 import { WellsTradeAccountChoiceView } from './WellsTradeAccountChoiceView';
+import { downloadAccountStatementPdf, downloadTransactionReceiptPdf } from '../../utils/transactionPdfGenerator';
+import { TransactionDetailModal } from '../common/TransactionDetailModal';
 
 interface WebBankingDashboardProps {
   userData: UserProfile;
@@ -94,6 +96,8 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
   const [hideBalances, setHideBalances] = useState(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [selectedTxForModal, setSelectedTxForModal] = useState<{ tx: Transaction; account: BankAccount } | null>(null);
+  const [statementToast, setStatementToast] = useState(false);
   const greeting = useGreeting();
 
   // Scroll ref & controls for mobile/desktop navigation tabs
@@ -1121,49 +1125,114 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                 </div>
               </div>
 
-              {/* Recent Transactions List on Web */}
+              {/* Recent Transactions List on Web with PDF Statement & Receipt Tools */}
               <div className="bg-white rounded-xl border border-stone-200 shadow-xs p-5 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-3">
-                  <h3 className="font-bold text-sm text-stone-900 uppercase tracking-wider">
-                    Recent Activity across accounts
-                  </h3>
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-2.5" />
-                    <input
-                      type="text"
-                      placeholder="Search transactions"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="text-xs pl-8 pr-3 py-1.5 border border-stone-200 rounded-lg w-48 focus:w-60 transition-all focus:outline-none focus:border-[#d71e28]"
-                    />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
+                  <div>
+                    <h3 className="font-bold text-sm text-stone-900 uppercase tracking-wider">
+                      Recent Activity across accounts
+                    </h3>
+                    <span className="text-[11px] text-stone-500">
+                      Click any transaction for official receipt & print-to-PDF
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        downloadAccountStatementPdf(checkingAcc, userData.name);
+                        setStatementToast(true);
+                        setTimeout(() => setStatementToast(false), 2500);
+                      }}
+                      className="bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs border border-stone-200"
+                      title="Download complete account activity statement in official PDF format"
+                    >
+                      <Download className="w-3.5 h-3.5 text-[#d71e28]" />
+                      <span>Download Statement (PDF)</span>
+                    </button>
+
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-2.5" />
+                      <input
+                        type="text"
+                        placeholder="Search transactions"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="text-xs pl-8 pr-3 py-1.5 border border-stone-200 rounded-lg w-36 sm:w-44 focus:w-52 transition-all focus:outline-none focus:border-[#d71e28]"
+                      />
+                    </div>
                   </div>
                 </div>
 
+                {statementToast && (
+                  <div className="bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs rounded-lg p-2.5 flex items-center gap-2 animate-in fade-in">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Official Account Statement PDF downloaded successfully to your device!</span>
+                  </div>
+                )}
+
                 <div className="divide-y divide-stone-100">
-                  {checkingAcc.transactions
-                    .filter((t) => t.description.toLowerCase().includes(searchQuery.toLowerCase()))
-                    .map((tx) => (
-                      <div key={tx.id} className="py-3 flex items-center justify-between text-xs">
-                        <div>
-                          <span className="font-semibold text-stone-900 block">{tx.description}</span>
-                          <div className="flex items-center gap-2 text-stone-500 text-[11px] mt-0.5">
-                            <span>{tx.date}</span>
-                            <span>•</span>
-                            <span className="bg-stone-100 px-1.5 py-0.5 rounded text-stone-700">
-                              {tx.category}
+                  {checkingAcc.transactions.length === 0 ? (
+                    <div className="py-8 text-center text-stone-500 space-y-2">
+                      <FileText className="w-8 h-8 text-stone-300 mx-auto" />
+                      <div className="text-xs font-medium">No recent transactions recorded yet</div>
+                      <button
+                        onClick={() => downloadAccountStatementPdf(checkingAcc, userData.name)}
+                        className="text-xs text-[#d71e28] font-semibold hover:underline inline-flex items-center gap-1"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>Download $0.00 Opening Statement (PDF)</span>
+                      </button>
+                    </div>
+                  ) : (
+                    checkingAcc.transactions
+                      .filter((t) => t.description.toLowerCase().includes(searchQuery.toLowerCase()))
+                      .map((tx) => (
+                        <div
+                          key={tx.id}
+                          onClick={() => setSelectedTxForModal({ tx, account: checkingAcc })}
+                          className="py-3 px-2 -mx-2 flex items-center justify-between text-xs rounded-lg hover:bg-stone-50 transition-colors cursor-pointer group"
+                        >
+                          <div className="flex-1 pr-3">
+                            <span className="font-semibold text-stone-900 group-hover:text-[#d71e28] transition-colors block">
+                              {tx.description}
                             </span>
+                            <div className="flex items-center gap-2 text-stone-500 text-[11px] mt-0.5">
+                              <span>{tx.date}</span>
+                              <span>•</span>
+                              <span className="bg-stone-100 px-1.5 py-0.5 rounded text-stone-700">
+                                {tx.category}
+                              </span>
+                              <span>•</span>
+                              <span className="text-[#d71e28] font-medium group-hover:underline">Save PDF / Print</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span
+                              className={`font-bold tabular-nums text-sm ${
+                                tx.type === 'credit' ? 'text-emerald-700' : 'text-stone-900'
+                              }`}
+                            >
+                              {tx.type === 'credit' ? '+' : '-'}${tx.amount.toFixed(2)}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                downloadTransactionReceiptPdf(tx, checkingAcc, userData.name);
+                              }}
+                              className="p-1.5 rounded-full hover:bg-stone-200 text-stone-400 hover:text-[#d71e28] transition-colors"
+                              title="Download PDF Receipt"
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
-
-                        <span
-                          className={`font-bold tabular-nums text-sm ${
-                            tx.type === 'credit' ? 'text-emerald-700' : 'text-stone-900'
-                          }`}
-                        >
-                          {tx.type === 'credit' ? '+' : '-'}${tx.amount.toFixed(2)}
-                        </span>
-                      </div>
-                    ))}
+                      ))
+                  )}
                 </div>
               </div>
             </div>
@@ -1523,21 +1592,61 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
 
               {/* Transactions List */}
               <div className="space-y-3">
-                <h4 className="font-bold text-sm text-stone-900 uppercase tracking-wider">
-                  Payment History & Direct Debits
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-sm text-stone-900 uppercase tracking-wider">
+                    Payment History & Direct Debits
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => downloadAccountStatementPdf(loanAcc, userData.name)}
+                    className="text-xs text-[#d71e28] hover:text-[#9b131c] font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Download Loan Statement (PDF)</span>
+                  </button>
+                </div>
+
                 <div className="border border-stone-200 rounded-xl divide-y divide-stone-100 p-2">
-                  {loanAcc.transactions.map((tx) => (
-                    <div key={tx.id} className="p-3 flex justify-between items-center text-xs">
-                      <div>
-                        <span className="text-[11px] text-stone-500 block">{tx.date}</span>
-                        <span className="font-medium text-stone-900">{tx.description}</span>
-                      </div>
-                      <span className="font-semibold tabular-nums text-emerald-700">
-                        +${tx.amount.toFixed(2)}
-                      </span>
+                  {loanAcc.transactions.length === 0 ? (
+                    <div className="py-6 text-center text-xs text-stone-500">
+                      No loan payments recorded for this period.
                     </div>
-                  ))}
+                  ) : (
+                    loanAcc.transactions.map((tx) => (
+                      <div
+                        key={tx.id}
+                        onClick={() => setSelectedTxForModal({ tx, account: loanAcc })}
+                        className="p-3 flex justify-between items-center text-xs rounded-lg hover:bg-stone-50 cursor-pointer group transition-colors"
+                      >
+                        <div className="flex-1 pr-3">
+                          <span className="text-[11px] text-stone-500 block">{tx.date}</span>
+                          <span className="font-medium text-stone-900 group-hover:text-[#d71e28] transition-colors block">
+                            {tx.description}
+                          </span>
+                          <span className="text-[10px] text-[#d71e28] group-hover:underline">
+                            Click for official receipt & print-to-PDF
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-semibold tabular-nums text-emerald-700 text-sm">
+                            +${tx.amount.toFixed(2)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              downloadTransactionReceiptPdf(tx, loanAcc, userData.name);
+                            }}
+                            className="p-1 rounded-full hover:bg-stone-200 text-stone-400 hover:text-[#d71e28] transition-colors"
+                            title="Download PDF Receipt"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -1702,10 +1811,20 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
         onClose={() => setSelectedAccount(null)}
         onMakePayment={handleMakeLoanPayment}
         onToggleAutopay={handleToggleAutopay}
+        userName={userData.name}
         onOpenLoanConfig={() => {
           setSelectedAccount(null);
           setIsLoanConfigOpen(true);
         }}
+      />
+
+      {/* Transaction Details & PDF Receipt / Print Modal */}
+      <TransactionDetailModal
+        isOpen={Boolean(selectedTxForModal)}
+        onClose={() => setSelectedTxForModal(null)}
+        transaction={selectedTxForModal?.tx || null}
+        account={selectedTxForModal?.account || null}
+        userName={userData.name}
       />
 
       {/* Loan Amount Configurator Modal (From $700 up to $100 Million USD) */}

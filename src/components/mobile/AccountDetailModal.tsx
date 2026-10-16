@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { X, Search, Info, CheckCircle2, ChevronRight, Copy, Check, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { X, Search, Info, CheckCircle2, ChevronRight, Copy, Check, ArrowDownLeft, ArrowUpRight, Download, FileText, Printer } from 'lucide-react';
 import { BankAccount, Transaction } from '../../types/banking';
+import { downloadAccountStatementPdf, downloadTransactionReceiptPdf } from '../../utils/transactionPdfGenerator';
+import { TransactionDetailModal } from '../common/TransactionDetailModal';
 
 interface AccountDetailModalProps {
   account: BankAccount | null;
@@ -9,6 +11,7 @@ interface AccountDetailModalProps {
   onMakePayment?: (accountId: string, amount: number) => void;
   onToggleAutopay?: (accountId: string) => void;
   onOpenLoanConfig?: () => void;
+  userName?: string;
 }
 
 export const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
@@ -18,6 +21,7 @@ export const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
   onMakePayment,
   onToggleAutopay,
   onOpenLoanConfig,
+  userName,
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'manage' | 'details'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,6 +29,8 @@ export const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
   const [showPayModal, setShowPayModal] = useState(false);
   const [customPayAmount, setCustomPayAmount] = useState('587.68');
   const [paySuccess, setPaySuccess] = useState(false);
+  const [selectedTxForModal, setSelectedTxForModal] = useState<Transaction | null>(null);
+  const [statementSuccess, setStatementSuccess] = useState(false);
 
   if (!isOpen || !account) return null;
 
@@ -188,24 +194,48 @@ export const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
                 </div>
               )}
 
-              {/* Transactions List */}
+              {/* Transactions List & PDF Statement Tools */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     <h3 className="text-base font-normal text-stone-900">Transactions</h3>
                     <Info className="w-4 h-4 text-stone-400" />
                   </div>
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-2.5" />
-                    <input
-                      type="text"
-                      placeholder="Search"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="text-xs pl-8 pr-3 py-1.5 border border-stone-200 rounded-full w-28 focus:w-36 transition-all focus:outline-none focus:border-stone-400"
-                    />
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        downloadAccountStatementPdf(account, userName || 'Account Holder');
+                        setStatementSuccess(true);
+                        setTimeout(() => setStatementSuccess(false), 2500);
+                      }}
+                      className="bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold px-2.5 py-1.5 rounded-full transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs border border-stone-200"
+                      title="Download complete account activity statement in official PDF format"
+                    >
+                      <Download className="w-3.5 h-3.5 text-[#d71e28]" />
+                      <span>Download Statement (PDF)</span>
+                    </button>
+
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-2.5" />
+                      <input
+                        type="text"
+                        placeholder="Search"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="text-xs pl-8 pr-3 py-1.5 border border-stone-200 rounded-full w-24 focus:w-32 transition-all focus:outline-none focus:border-stone-400"
+                      />
+                    </div>
                   </div>
                 </div>
+
+                {statementSuccess && (
+                  <div className="bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs rounded-lg p-2 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>Official Statement PDF downloaded to your device!</span>
+                  </div>
+                )}
 
                 <div className="border-t border-stone-200 divide-y divide-stone-100">
                   {filteredTransactions.length === 0 ? (
@@ -214,20 +244,44 @@ export const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
                     </div>
                   ) : (
                     filteredTransactions.map((tx) => (
-                      <div key={tx.id} className="py-3 flex justify-between items-start">
-                        <div>
+                      <div
+                        key={tx.id}
+                        onClick={() => setSelectedTxForModal(tx)}
+                        className="py-3 px-2 -mx-2 flex justify-between items-center rounded-lg hover:bg-stone-50 transition-colors cursor-pointer group"
+                      >
+                        <div className="flex-1 pr-3">
                           <span className="text-[11px] text-stone-500 block mb-0.5">{tx.date}</span>
-                          <span className="text-xs font-medium text-stone-900 uppercase tracking-tight">
+                          <span className="text-xs font-medium text-stone-900 uppercase tracking-tight group-hover:text-[#d71e28] transition-colors block">
                             {tx.description}
                           </span>
+                          <span className="text-[10px] text-stone-500 flex items-center gap-1 mt-0.5">
+                            <span className="bg-stone-100 px-1.5 py-0.2 rounded text-stone-600">{tx.category || 'Banking'}</span>
+                            <span>•</span>
+                            <span className="text-[#d71e28] font-medium group-hover:underline">Click for PDF receipt & print</span>
+                          </span>
                         </div>
-                        <span
-                          className={`font-semibold text-sm tabular-nums ml-3 shrink-0 ${
-                            tx.type === 'credit' ? 'text-emerald-700' : 'text-stone-900'
-                          }`}
-                        >
-                          {tx.type === 'credit' ? '+' : '-'}${tx.amount.toFixed(2)}
-                        </span>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className={`font-semibold text-sm tabular-nums ${
+                              tx.type === 'credit' ? 'text-emerald-700' : 'text-stone-900'
+                            }`}
+                          >
+                            {tx.type === 'credit' ? '+' : '-'}${tx.amount.toFixed(2)}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              downloadTransactionReceiptPdf(tx, account, userName || 'Account Holder');
+                            }}
+                            className="p-1.5 rounded-full hover:bg-stone-200 text-stone-400 hover:text-[#d71e28] transition-colors"
+                            title="Download PDF Receipt"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     ))
                   )}
@@ -399,6 +453,15 @@ export const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
           </div>
         )}
       </div>
+
+      {/* Interactive Transaction Receipt & Print Modal */}
+      <TransactionDetailModal
+        isOpen={Boolean(selectedTxForModal)}
+        onClose={() => setSelectedTxForModal(null)}
+        transaction={selectedTxForModal}
+        account={account}
+        userName={userName || 'Account Holder'}
+      />
     </div>
   );
 };
