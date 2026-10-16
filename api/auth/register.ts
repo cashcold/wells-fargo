@@ -1,4 +1,4 @@
-import { bankDb } from '../database';
+import { bankDb } from '../database.ts';
 
 export default function handler(req: any, res: any) {
   if (req.method !== 'POST') {
@@ -6,7 +6,15 @@ export default function handler(req: any, res: any) {
   }
 
   try {
-    const { username, password, registrationData } = req.body || {};
+    let body = req.body;
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch {
+        // use as-is
+      }
+    }
+    const { username, password, registrationData } = body || {};
     const regUsername = (username || registrationData?.username || '').trim();
     const regPassword = (password || registrationData?.password || '').trim();
 

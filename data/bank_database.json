@@ -171,6 +171,155 @@
           "c1HomePhone": "(555) 234-5678"
         }
       }
+    },
+    "usr-1792135889611-100": {
+      "id": "usr-1792135889611-100",
+      "username": "verifying_user",
+      "password": "password123",
+      "name": "Verifying Customer",
+      "createdAt": "2026-10-16T07:31:29.639Z",
+      "role": "customer",
+      "profile": {
+        "name": "Verifying Customer",
+        "greetingTime": "afternoon",
+        "ficoScore": 780,
+        "ficoChange": 0,
+        "ficoUpdatedDate": "10/16/2026",
+        "unreadNotifications": 1,
+        "bonusCode": "JA23OU",
+        "accounts": [
+          {
+            "id": "checking-6918",
+            "name": "EVERYDAY CHECKING",
+            "accountNumber": "..6918",
+            "routingNumber": "061000227",
+            "type": "checking",
+            "availableBalance": 0,
+            "currentBalance": 0,
+            "transactions": []
+          },
+          {
+            "id": "savings-9914",
+            "name": "WAY2SAVE SAVINGS",
+            "accountNumber": "..9914",
+            "routingNumber": "061000227",
+            "type": "savings",
+            "availableBalance": 0,
+            "currentBalance": 0,
+            "transactions": []
+          }
+        ],
+        "bills": [],
+        "recentDeposits": [],
+        "treasuryHoldings": [],
+        "voiceNotes": [],
+        "registrationData": {
+          "c1FullName": "Verifying Customer"
+        }
+      }
+    },
+    "usr-1792136074982-435": {
+      "id": "usr-1792136074982-435",
+      "username": "verifying_id_user",
+      "password": "password123",
+      "name": "Jane Smith",
+      "createdAt": "2026-10-16T07:34:35.006Z",
+      "role": "customer",
+      "profile": {
+        "name": "Jane Smith",
+        "avatarUrl": "data:image/svg+xml;utf8,<svg></svg>",
+        "idPhotoUrl": "data:image/svg+xml;utf8,<svg></svg>",
+        "idType": "Driver's License",
+        "greetingTime": "afternoon",
+        "ficoScore": 780,
+        "ficoChange": 0,
+        "ficoUpdatedDate": "10/16/2026",
+        "unreadNotifications": 1,
+        "bonusCode": "JA23OU",
+        "accounts": [
+          {
+            "id": "checking-7004",
+            "name": "EVERYDAY CHECKING",
+            "accountNumber": "..7004",
+            "routingNumber": "061000227",
+            "type": "checking",
+            "availableBalance": 0,
+            "currentBalance": 0,
+            "transactions": []
+          },
+          {
+            "id": "savings-5117",
+            "name": "WAY2SAVE SAVINGS",
+            "accountNumber": "..5117",
+            "routingNumber": "061000227",
+            "type": "savings",
+            "availableBalance": 0,
+            "currentBalance": 0,
+            "transactions": []
+          }
+        ],
+        "bills": [],
+        "recentDeposits": [],
+        "treasuryHoldings": [],
+        "voiceNotes": [],
+        "registrationData": {
+          "c1FullName": "Jane Smith",
+          "idPhotoUrl": "data:image/svg+xml;utf8,<svg></svg>",
+          "c1PrimaryIdDesc": "Driver's License"
+        }
+      }
+    },
+    "usr-1792136217126-139": {
+      "id": "usr-1792136217126-139",
+      "username": "final_verification_customer",
+      "password": "password123",
+      "name": "Sarah Connor",
+      "createdAt": "2026-10-16T07:36:57.146Z",
+      "role": "customer",
+      "profile": {
+        "name": "Sarah Connor",
+        "avatarUrl": "data:image/svg+xml;utf8,<svg><text>ID</text></svg>",
+        "idPhotoUrl": "data:image/svg+xml;utf8,<svg><text>ID</text></svg>",
+        "idType": "Driver's License",
+        "greetingTime": "afternoon",
+        "ficoScore": 780,
+        "ficoChange": 0,
+        "ficoUpdatedDate": "10/16/2026",
+        "unreadNotifications": 1,
+        "bonusCode": "JA23OU",
+        "accounts": [
+          {
+            "id": "checking-7560",
+            "name": "EVERYDAY CHECKING",
+            "accountNumber": "..7560",
+            "routingNumber": "061000227",
+            "type": "checking",
+            "availableBalance": 0,
+            "currentBalance": 0,
+            "transactions": []
+          },
+          {
+            "id": "savings-4346",
+            "name": "WAY2SAVE SAVINGS",
+            "accountNumber": "..4346",
+            "routingNumber": "061000227",
+            "type": "savings",
+            "availableBalance": 0,
+            "currentBalance": 0,
+            "transactions": []
+          }
+        ],
+        "bills": [],
+        "recentDeposits": [],
+        "treasuryHoldings": [],
+        "voiceNotes": [],
+        "registrationData": {
+          "c1FullName": "Sarah Connor",
+          "idPhotoUrl": "data:image/svg+xml;utf8,<svg><text>ID</text></svg>",
+          "c1PrimaryIdDesc": "Driver's License",
+          "c1PrimaryIdState": "CA"
+        }
+      }
     }
   },
   "deposits": [

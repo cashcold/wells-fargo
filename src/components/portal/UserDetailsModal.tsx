@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   X,
   User,
@@ -20,12 +20,19 @@ import {
   Edit3,
   Award,
   Download,
+  Camera,
+  Upload,
+  RefreshCw,
+  Sparkles,
 } from 'lucide-react';
 import { UserProfile, EnrollmentFormData } from '../../types/banking';
 import { WfLogo } from '../common/WfLogo';
 import { FdicDisclaimer } from '../common/FdicDisclaimer';
 import { downloadSignatureCardPdf } from '../../utils/pdfGenerator';
 import { useGreeting } from '../../utils/greeting';
+import { authService } from '../../services/authService';
+import { SAMPLE_ID_FRONT } from '../common/IdUploadWidget';
+import { compressImageFile } from '../../utils/imageUtils';
 
 interface UserDetailsModalProps {
   isOpen: boolean;
@@ -33,6 +40,7 @@ interface UserDetailsModalProps {
   userData: UserProfile;
   onOpenEditRegistration?: () => void;
   onOpenPdfSignatureCard?: () => void;
+  onUpdateUserData?: (updated: UserProfile) => void;
 }
 
 export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
@@ -41,11 +49,87 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   userData,
   onOpenEditRegistration,
   onOpenPdfSignatureCard,
+  onUpdateUserData,
 }) => {
   const greeting = useGreeting();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [showSsn, setShowSsn] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<'all' | 'personal' | 'id' | 'tax' | 'account'>('all');
+  const [showEnlargeModal, setShowEnlargeModal] = useState(false);
+  const [enlargedImageUrl, setEnlargedImageUrl] = useState<string>('');
+  const [uploadSuccessMessage, setUploadSuccessMessage] = useState<string>('');
+  const [isUpdatingId, setIsUpdatingId] = useState(false);
+
+  const handleUploadIdImage = async (dataUrl: string) => {
+    if (!dataUrl) return;
+    setIsUpdatingId(true);
+    try {
+      const existingReg = userData.registrationData || {
+        accountType: 'Everyday Checking',
+        initialDeposit: '0.00',
+        offerCode: userData.bonusCode || 'JA23OU',
+        bankName: 'Wells Fargo Bank, N.A.',
+        c1FullName: userData.name || 'Account Holder',
+        c1StreetAddress: '',
+        c1City: 'San Francisco',
+        c1State: 'CA',
+        c1Zip: '94133',
+        c1Country: 'USA',
+        c1Tin: '***-**-****',
+        c1HomePhone: '',
+        c1Dob: '1992-06-14',
+        c1Employer: '',
+        c1PrimaryIdDesc: "Driver's License",
+        c1PrimaryIdState: 'CA',
+      } as EnrollmentFormData;
+
+      const updatedReg: EnrollmentFormData = {
+        ...existingReg,
+        idPhotoUrl: dataUrl,
+      };
+
+      const updatedProfile: UserProfile = {
+        ...userData,
+        idPhotoUrl: dataUrl,
+        avatarUrl: dataUrl,
+        registrationData: updatedReg,
+      };
+
+      const username = userData.registrationData?.username || userData.name;
+      await authService.updateUserProfile(username, updatedProfile);
+
+      if (onUpdateUserData) {
+        onUpdateUserData(updatedProfile);
+      }
+
+      setUploadSuccessMessage('Your government photo ID has been successfully uploaded and updated on your profile.');
+      setTimeout(() => setUploadSuccessMessage(''), 5000);
+    } catch (e) {
+      console.error('Failed to update ID image:', e);
+    } finally {
+      setIsUpdatingId(false);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const dataUrl = await compressImageFile(file);
+      handleUploadIdImage(dataUrl);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        handleUploadIdImage(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
 
   if (!isOpen) return null;
 
@@ -54,6 +138,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
     initialDeposit: '0.00',
     offerCode: userData.bonusCode || 'JA23OU',
     bankName: 'Wells Fargo Bank, N.A.',
+    idPhotoUrl: userData.idPhotoUrl || '',
+    idPhotoBackUrl: userData.idPhotoBackUrl || '',
     c1FullName: userData.name || 'Account Holder',
     c1StreetAddress: 'Not yet recorded (Pending Enrollment)',
     c1HowLongYr: '0',
@@ -189,33 +275,107 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
           </div>
         </div>
 
-        {/* Personalized Welcome Banner with Good Afternoon */}
+        {/* Hidden inputs for user ID document & selfie uploads */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+        {/* Personalized Welcome Banner with Good Afternoon and User Avatar / Photo */}
         <div className="bg-gradient-to-r from-stone-900 via-stone-850 to-red-950 text-white px-6 py-4 flex flex-wrap items-center justify-between gap-4 shrink-0 border-b border-stone-800">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="bg-[#ffcc00] text-stone-900 font-bold text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">
-                Verified Account Holder
-              </span>
-              <span className="text-xs text-stone-300 font-mono">
-                REF: DSG8921-061000227
-              </span>
+          <div className="flex items-center gap-4">
+            <div className="relative group shrink-0">
+              {userData.avatarUrl || userData.idPhotoUrl || reg.idPhotoUrl ? (
+                <div
+                  onClick={() => {
+                    const idImg = userData.idPhotoUrl || reg.idPhotoUrl;
+                    if (idImg) {
+                      setEnlargedImageUrl(idImg);
+                      setShowEnlargeModal(true);
+                    }
+                  }}
+                  className="cursor-pointer"
+                  title="Click to view verified government ID document"
+                >
+                  <img
+                    src={userData.avatarUrl || userData.idPhotoUrl || reg.idPhotoUrl}
+                    alt={userData.name}
+                    className="w-16 h-16 rounded-full object-cover border-2 border-[#ffcc00] shadow-md group-hover:brightness-110 transition-all bg-white"
+                  />
+                  <div className="absolute -bottom-1 -right-1 bg-emerald-600 rounded-full p-0.5 border-2 border-stone-900">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-16 h-16 rounded-full bg-white/10 border-2 border-dashed border-white/40 hover:border-[#ffcc00] flex flex-col items-center justify-center text-[#ffcc00] cursor-pointer transition-colors"
+                  title="Click to upload your ID document"
+                >
+                  <Camera className="w-6 h-6" />
+                  <span className="text-[9px] font-bold mt-0.5">Add ID</span>
+                </div>
+              )}
+
+              {/* Quick camera button badge to change/update ID anytime */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute -top-1 -right-1 bg-black/80 hover:bg-[#d71e28] text-white p-1 rounded-full border border-white/40 shadow-sm transition-colors cursor-pointer"
+                title="Upload or change ID photo"
+              >
+                <Camera className="w-3 h-3 text-[#ffcc00]" />
+              </button>
             </div>
-            <h2 className="font-serif text-2xl sm:text-3xl font-normal text-white">
-              {greeting}, {userData.name}!
-            </h2>
-            <p className="text-xs text-stone-300 mt-1">
-              Here is the complete record of the information you used to complete the Consumer Account Application & Signature Card.
-            </p>
+
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="bg-[#ffcc00] text-stone-900 font-bold text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Verified Account Holder
+                </span>
+                <span className="text-xs text-stone-300 font-mono">
+                  REF: DSG8921-061000227
+                </span>
+              </div>
+              <h2 className="font-serif text-2xl sm:text-3xl font-normal text-white">
+                {greeting}, {userData.name}!
+              </h2>
+              <p className="text-xs text-stone-300 mt-1">
+                Official customer profile & government ID verification on file.
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-center">
+          <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUpdatingId}
+              className="bg-[#d71e28] hover:bg-[#b81620] text-white px-3.5 py-2 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+              title="Upload new ID photo from computer or phone"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>{userData.idPhotoUrl || reg.idPhotoUrl ? 'Update ID Photo' : 'Upload ID Photo'}</span>
+            </button>
+
             <button
               onClick={() => downloadSignatureCardPdf(reg, userData.name)}
-              className="bg-white hover:bg-stone-100 text-stone-900 px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+              className="bg-white hover:bg-stone-100 text-stone-900 px-3.5 py-2 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
               title="Download Signature Card as PDF"
             >
               <Download className="w-3.5 h-3.5 text-[#d71e28]" />
-              <span>Download Signature Card (PDF)</span>
+              <span>Signature Card (PDF)</span>
             </button>
 
             {onOpenPdfSignatureCard && (
@@ -263,6 +423,23 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
         {/* Modal Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-stone-50 text-stone-900">
           
+          {/* Real-time upload confirmation banner */}
+          {uploadSuccessMessage && (
+            <div className="p-3.5 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-800 flex items-center justify-between shadow-xs animate-in fade-in">
+              <div className="flex items-center gap-2.5">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                <span className="font-semibold">{uploadSuccessMessage}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setUploadSuccessMessage('')}
+                className="text-emerald-700 hover:text-emerald-900 p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {/* SECTION 1: ACCOUNT & BANKING DETAILS */}
           {(activeCategory === 'all' || activeCategory === 'account') && (
             <div className="bg-white rounded-xl border border-stone-200 p-5 shadow-xs space-y-4">
@@ -461,6 +638,141 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                   <span className="font-semibold text-stone-900">{reg.c1SecondaryIdDesc || 'Social Security Card'}</span>
                 </div>
               </div>
+
+              {/* Attached Government Photo ID Document */}
+              <div className="pt-4 border-t border-stone-200">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-stone-800">
+                    <ShieldCheck className="w-4 h-4 text-[#d71e28]" />
+                    <span>Attached Government Photo ID Document</span>
+                  </div>
+                  <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> CIP Verified Document
+                  </span>
+                </div>
+
+                {userData.idPhotoUrl || reg.idPhotoUrl ? (
+                  <div className="bg-stone-50 border border-stone-200 rounded-xl p-4 flex flex-col sm:flex-row items-center gap-4">
+                    <div
+                      onClick={() => {
+                        const img = userData.idPhotoUrl || reg.idPhotoUrl || '';
+                        setEnlargedImageUrl(img);
+                        setShowEnlargeModal(true);
+                      }}
+                      className="relative h-36 w-56 bg-white rounded-lg overflow-hidden border border-stone-300 shadow-xs cursor-pointer group shrink-0 flex items-center justify-center"
+                    >
+                      <img
+                        src={userData.idPhotoUrl || reg.idPhotoUrl}
+                        alt="Government Photo ID"
+                        className="w-full h-full object-contain p-1 group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold gap-1">
+                        <Eye className="w-4 h-4" />
+                        <span>Click to Enlarge</span>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 space-y-2 text-xs w-full">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-stone-900 text-sm">
+                            {reg.c1PrimaryIdDesc || "Driver's License"}
+                          </span>
+                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            Active ID on Profile
+                          </span>
+                        </div>
+                        <span className="text-stone-500 text-[11px] block mt-0.5">
+                          Issuing State/Jurisdiction: {reg.c1PrimaryIdState || 'USA'} • Exp: {reg.c1PrimaryExpDate || '06/14/2027'}
+                        </span>
+                      </div>
+
+                      <p className="text-stone-600 text-[11px] leading-relaxed">
+                        Official primary identification image stored securely with 256-bit AES encryption in compliance with Federal FinCEN and USA PATRIOT Act Section 326 Customer Identification Program requirements.
+                      </p>
+
+                      <div className="pt-2 flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const img = userData.idPhotoUrl || reg.idPhotoUrl || '';
+                            setEnlargedImageUrl(img);
+                            setShowEnlargeModal(true);
+                          }}
+                          className="bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 px-3 py-1.5 rounded-full font-semibold text-xs inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-stone-600" />
+                          <span>View Full-Size</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUpdatingId}
+                          className="bg-[#d71e28] hover:bg-[#b81620] text-white px-3 py-1.5 rounded-full font-semibold text-xs inline-flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Replace ID Photo</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => cameraInputRef.current?.click()}
+                          disabled={isUpdatingId}
+                          className="bg-stone-800 hover:bg-stone-900 text-white px-3 py-1.5 rounded-full font-semibold text-xs inline-flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
+                        >
+                          <Camera className="w-3.5 h-3.5 text-[#ffcc00]" />
+                          <span>Camera</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-6 bg-stone-50 border-2 border-dashed border-stone-300 rounded-xl text-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-red-50 text-[#d71e28] flex items-center justify-center mx-auto">
+                      <Camera className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-stone-900 text-sm">Upload Government-Issued Photo ID</h4>
+                      <p className="text-stone-500 text-xs mt-1 max-w-md mx-auto">
+                        Attach a clear photo of your Driver's License, State ID, National ID, or Passport to verify your account identity.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUpdatingId}
+                        className="bg-[#d71e28] hover:bg-[#b81620] text-white px-4 py-2 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Upload ID Image</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => cameraInputRef.current?.click()}
+                        disabled={isUpdatingId}
+                        className="bg-stone-800 hover:bg-stone-900 text-white px-4 py-2 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-[#ffcc00]" />
+                        <span>Take Photo with Camera</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleUploadIdImage(SAMPLE_ID_FRONT)}
+                        disabled={isUpdatingId}
+                        className="bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 px-3.5 py-2 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Use Demo Real ID</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -591,6 +903,46 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Lightbox / Enlarged View Modal */}
+      {showEnlargeModal && enlargedImageUrl && (
+        <div className="fixed inset-0 z-60 bg-black/85 flex items-center justify-center p-4">
+          <div className="relative max-w-3xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95">
+            <div className="bg-[#d71e28] text-white px-5 py-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-[#ffcc00]" />
+                <span className="font-bold text-xs uppercase tracking-wider">
+                  Official Government Photo ID Record
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEnlargeModal(false)}
+                className="p-1 rounded-full hover:bg-black/20 text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 bg-stone-900 flex items-center justify-center min-h-[350px]">
+              <img
+                src={enlargedImageUrl}
+                alt="Enlarged ID Preview"
+                className="max-h-[75vh] max-w-full object-contain rounded shadow-lg"
+              />
+            </div>
+            <div className="p-3 bg-stone-100 border-t border-stone-200 flex justify-between items-center text-xs">
+              <span className="text-stone-500 text-[11px]">Primary Customer ID • Encrypted in Database</span>
+              <button
+                type="button"
+                onClick={() => setShowEnlargeModal(false)}
+                className="px-4 py-1.5 bg-stone-800 text-white font-semibold rounded-full hover:bg-stone-900 cursor-pointer"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -32,6 +32,7 @@ import { WfLogo } from '../common/WfLogo';
 import { FdicDisclaimer } from '../common/FdicDisclaimer';
 import { downloadSignatureCardPdf } from '../../utils/pdfGenerator';
 import { authService } from '../../services/authService';
+import { IdUploadWidget, SAMPLE_ID_FRONT } from '../common/IdUploadWidget';
 
 import { EnrollmentFormData } from '../../types/banking';
 export type { EnrollmentFormData };
@@ -41,6 +42,9 @@ const INITIAL_FORM_STATE: EnrollmentFormData = {
   password: '',
   confirmPassword: '',
   email: '',
+  idPhotoUrl: '',
+  idPhotoBackUrl: '',
+  selfieUrl: '',
   accountType: 'Checking & Savings Bundle',
   initialDeposit: '0.00',
   offerCode: 'JA23OU',
@@ -202,6 +206,7 @@ export const EnrollmentRegistrationModal: React.FC<EnrollmentRegistrationModalPr
       c1PrimaryIdState: 'CA',
       c1PrimaryIssueDate: '2021-04-10',
       c1PrimaryExpDate: '2027-06-14',
+      idPhotoUrl: SAMPLE_ID_FRONT,
       c1SecondaryIdDesc: 'Social Security Card (Official)',
       c1SecondaryIdState: 'USA',
       c1Signature: 'Morgan Vance',
@@ -224,6 +229,7 @@ export const EnrollmentRegistrationModal: React.FC<EnrollmentRegistrationModalPr
     { key: 'c1Dob', label: 'Date of Birth', step: 1 },
     { key: 'c1Employer', label: 'Current Employer', step: 1 },
     { key: 'c1PrimaryIdDesc', label: 'Primary ID Description', step: 1 },
+    { key: 'idPhotoUrl', label: 'Government Photo ID Image', step: 1 },
     { key: 'c1Signature', label: 'Customer 1 Authorized Signature', step: 4 },
   ];
 
@@ -844,6 +850,17 @@ export const EnrollmentRegistrationModal: React.FC<EnrollmentRegistrationModalPr
                             value={formData.c1PrimaryExpDate}
                             onChange={(e) => handleInputChange('c1PrimaryExpDate', e.target.value)}
                             className="w-full border border-stone-300 rounded p-2 text-stone-900"
+                          />
+                        </div>
+
+                        {/* Government Photo ID Document Upload */}
+                        <div className="sm:col-span-2 pt-1">
+                          <IdUploadWidget
+                            frontImage={formData.idPhotoUrl}
+                            backImage={formData.idPhotoBackUrl}
+                            onFrontChange={(url) => handleInputChange('idPhotoUrl', url)}
+                            onBackChange={(url) => handleInputChange('idPhotoBackUrl', url)}
+                            idTypeLabel={formData.c1PrimaryIdDesc || "Driver's License / Government ID"}
                           />
                         </div>
 
@@ -1541,6 +1558,20 @@ export const EnrollmentRegistrationModal: React.FC<EnrollmentRegistrationModalPr
                           <div>{formData.c1Dob || '—'}</div>
                         </div>
                       </div>
+
+                      {formData.idPhotoUrl && (
+                        <div className="mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 text-[11px] text-emerald-800 font-semibold">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>Photo ID Attached & Verified</span>
+                          </div>
+                          <img
+                            src={formData.idPhotoUrl}
+                            alt="Attached ID"
+                            className="h-8 w-12 object-cover rounded border border-emerald-300 shadow-2xs"
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {/* Customer 2 Column */}

@@ -579,18 +579,31 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                           className="bg-white rounded-xl border border-stone-200 p-5 shadow-xs"
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h5 className="font-bold text-stone-900 text-base">
-                                  {usr.name}
-                                </h5>
-                                <span className="bg-stone-100 text-stone-700 font-mono text-[10px] px-2 py-0.5 rounded">
-                                  @{usr.username}
+                            <div className="flex items-center gap-3">
+                              {(usr.profile?.avatarUrl || usr.profile?.idPhotoUrl || reg?.idPhotoUrl) ? (
+                                <img
+                                  src={usr.profile?.avatarUrl || usr.profile?.idPhotoUrl || reg?.idPhotoUrl}
+                                  alt={usr.name}
+                                  className="w-10 h-10 rounded-full object-cover border-2 border-[#ffcc00] shrink-0 bg-white shadow-2xs"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-stone-200 flex items-center justify-center text-stone-500 shrink-0">
+                                  <User className="w-5 h-5" />
+                                </div>
+                              )}
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h5 className="font-bold text-stone-900 text-base">
+                                    {usr.name}
+                                  </h5>
+                                  <span className="bg-stone-100 text-stone-700 font-mono text-[10px] px-2 py-0.5 rounded">
+                                    @{usr.username}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-stone-500">
+                                  User ID: {usr.id} • Registered: {new Date(usr.createdAt).toLocaleDateString('en-US')}
                                 </span>
                               </div>
-                              <span className="text-xs text-stone-500">
-                                User ID: {usr.id} • Registered: {new Date(usr.createdAt).toLocaleDateString('en-US')}
-                              </span>
                             </div>
 
                             <button
@@ -695,6 +708,33 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                                     {reg?.c1Dob || '06/14/1992'}
                                   </span>
                                 </div>
+
+                                {(usr.profile?.idPhotoUrl || reg?.idPhotoUrl) && (
+                                  <div className="sm:col-span-3 pt-3 border-t border-amber-200">
+                                    <span className="text-[10px] text-stone-600 font-bold uppercase tracking-wider block mb-2 flex items-center gap-1.5">
+                                      <ShieldCheck className="w-3.5 h-3.5 text-[#d71e28]" />
+                                      <span>Attached Government Photo ID Image</span>
+                                    </span>
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white p-3 rounded-lg border border-amber-200">
+                                      <img
+                                        src={usr.profile?.idPhotoUrl || reg?.idPhotoUrl}
+                                        alt="Uploaded Government ID"
+                                        className="h-28 w-44 object-contain rounded border border-stone-300 bg-stone-50 shadow-2xs p-1 shrink-0"
+                                      />
+                                      <div className="text-xs space-y-1">
+                                        <div className="font-bold text-stone-900">
+                                          {reg?.c1PrimaryIdDesc || "Driver's License"}
+                                        </div>
+                                        <div className="text-stone-500 text-[11px]">
+                                          Issuing State/Jurisdiction: {reg?.c1PrimaryIdState || 'USA'}
+                                        </div>
+                                        <div className="text-emerald-700 font-semibold text-[11px] flex items-center gap-1 pt-1">
+                                          <CheckCircle2 className="w-3.5 h-3.5" /> CIP ID Document Stored in Database
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}

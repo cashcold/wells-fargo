@@ -59,6 +59,11 @@ export interface EnrollmentFormData {
   confirmPassword?: string;
   email?: string;
 
+  // Identity Verification Document Uploads
+  idPhotoUrl?: string; // Front of government ID photo / image (Base64 data URL)
+  idPhotoBackUrl?: string; // Back of government ID photo (optional)
+  selfieUrl?: string; // User portrait photo / selfie (optional)
+
   // Accounts
   accountType: 'Everyday Checking' | 'Way2Save Savings' | 'Checking & Savings Bundle' | 'Platinum Savings' | 'Time CD';
   initialDeposit: string;
@@ -209,6 +214,10 @@ export interface VoiceNote {
 
 export interface UserProfile {
   name: string;
+  avatarUrl?: string; // Profile picture / portrait photo
+  idPhotoUrl?: string; // Uploaded government ID document image
+  idPhotoBackUrl?: string; // Uploaded ID back image
+  idType?: string; // Primary ID document description
   greetingTime: 'morning' | 'afternoon' | 'evening';
   ficoScore: number;
   ficoChange: number;

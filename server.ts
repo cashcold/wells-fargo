@@ -1,11 +1,11 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
-import fargoHandler from './api/fargo';
-import healthHandler from './api/health';
-import loanHandler from './api/loan';
-import ratesHandler from './api/rates';
-import { bankDb } from './api/database';
+import fargoHandler from './api/fargo.ts';
+import healthHandler from './api/health.ts';
+import loanHandler from './api/loan.ts';
+import ratesHandler from './api/rates.ts';
+import { bankDb } from './api/database.ts';
 
 dotenv.config();
 

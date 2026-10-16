@@ -416,9 +416,22 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
               >
                 <WfLogo size="md" variant="white" />
               </button>
-              <span className="hidden lg:inline text-xs text-white/90 font-medium pl-3 border-l border-white/20">
-                {greeting}, {userData.name}!
-              </span>
+              <div
+                onClick={() => setIsUserDetailsOpen(true)}
+                className="hidden lg:flex items-center gap-2 pl-3 border-l border-white/20 cursor-pointer hover:opacity-90 transition-opacity"
+                title="View Account Profile & Verified ID"
+              >
+                {(userData.avatarUrl || userData.idPhotoUrl) && (
+                  <img
+                    src={userData.avatarUrl || userData.idPhotoUrl}
+                    alt={userData.name}
+                    className="w-7 h-7 rounded-full object-cover border border-[#ffcc00] shadow-2xs bg-white"
+                  />
+                )}
+                <span className="text-xs text-white/90 font-medium">
+                  {greeting}, {userData.name}!
+                </span>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
@@ -1720,7 +1733,7 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
             </div>
 
             {/* Quick Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white rounded-xl p-5 border border-stone-200 shadow-xs space-y-3">
                 <div className="flex items-center justify-between border-b border-stone-100 pb-2">
                   <span className="font-bold text-xs uppercase text-stone-800">Primary Customer Info</span>
@@ -1733,16 +1746,22 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                   </div>
                   <div>
                     <span className="text-stone-500 block text-[11px]">Street Address</span>
-                    <span className="font-medium text-stone-800">1048 Montgomery St, Apt 4B, San Francisco, CA 94133</span>
+                    <span className="font-medium text-stone-800">
+                      {userData.registrationData?.c1StreetAddress || '1048 Montgomery St, Apt 4B, San Francisco, CA 94133'}
+                    </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <span className="text-stone-500 block text-[11px]">Taxpayer ID</span>
-                      <span className="font-mono font-bold text-stone-900">***-**-4321</span>
+                      <span className="font-mono font-bold text-stone-900">
+                        {userData.registrationData?.c1Tin ? `***-**-${userData.registrationData.c1Tin.slice(-4)}` : '***-**-4321'}
+                      </span>
                     </div>
                     <div>
                       <span className="text-stone-500 block text-[11px]">Telephone</span>
-                      <span className="font-medium text-stone-900">(415) 890-2134</span>
+                      <span className="font-medium text-stone-900">
+                        {userData.registrationData?.c1HomePhone || '(415) 890-2134'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1764,8 +1783,8 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                       <span className="font-mono font-bold text-stone-900">061000227</span>
                     </div>
                     <div>
-                      <span className="text-stone-500 block text-[11px]">Account Number</span>
-                      <span className="font-mono font-bold text-stone-900">•••• 0987</span>
+                      <span className="text-stone-500 block text-[11px]">Primary Account</span>
+                      <span className="font-mono font-bold text-stone-900">{checkingAcc.accountNumber}</span>
                     </div>
                   </div>
                   <div>
@@ -1774,12 +1793,67 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* Verified Government Photo ID Card */}
+              <div className="bg-white rounded-xl p-5 border border-stone-200 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+                  <span className="font-bold text-xs uppercase text-stone-800">Government Photo ID</span>
+                  <span className="text-emerald-700 font-bold text-xs flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    CIP Active
+                  </span>
+                </div>
+                {userData.idPhotoUrl || userData.registrationData?.idPhotoUrl ? (
+                  <div className="space-y-2 text-xs">
+                    <div
+                      onClick={() => setIsUserDetailsOpen(true)}
+                      className="relative h-24 w-full bg-stone-50 rounded-lg overflow-hidden border border-stone-300 cursor-pointer group flex items-center justify-center shadow-2xs"
+                    >
+                      <img
+                        src={userData.idPhotoUrl || userData.registrationData?.idPhotoUrl}
+                        alt="Government Photo ID"
+                        className="w-full h-full object-contain p-1 group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-semibold gap-1">
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>View ID Document</span>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="font-bold text-stone-900 block truncate">
+                        {userData.registrationData?.c1PrimaryIdDesc || "Driver's License"}
+                      </span>
+                      <span className="text-stone-500 text-[11px] block">
+                        State/Jurisdiction: {userData.registrationData?.c1PrimaryIdState || 'CA'} • Official Copy
+                      </span>
+                    </div>
+                    <div className="pt-1 flex items-center gap-3">
+                      <button
+                        onClick={() => setIsUserDetailsOpen(true)}
+                        className="text-xs text-[#d71e28] font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>View & Update ID Details &gt;</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-stone-50 rounded-lg text-center space-y-2">
+                    <span className="text-stone-500 text-xs block">No government ID photo uploaded yet.</span>
+                    <button
+                      onClick={() => setIsUserDetailsOpen(true)}
+                      className="text-xs bg-[#d71e28] hover:bg-[#b81620] text-white px-3.5 py-1.5 rounded-full font-semibold transition-colors cursor-pointer"
+                    >
+                      Upload ID Document
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="text-center pt-2">
               <button
                 onClick={() => setIsUserDetailsOpen(true)}
-                className="bg-[#d71e28] hover:bg-[#b81620] text-white px-8 py-3 rounded-full text-xs font-bold transition-all shadow-md inline-flex items-center gap-2"
+                className="bg-[#d71e28] hover:bg-[#b81620] text-white px-8 py-3 rounded-full text-xs font-bold transition-all shadow-md inline-flex items-center gap-2 cursor-pointer"
               >
                 <User className="w-4 h-4" />
                 <span>Open Complete Registration Profile & Disclosures</span>
@@ -1794,6 +1868,7 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
         isOpen={isUserDetailsOpen}
         onClose={() => setIsUserDetailsOpen(false)}
         userData={userData}
+        onUpdateUserData={onUpdateUserData}
         onOpenEditRegistration={() => {
           setIsUserDetailsOpen(false);
           onOpenSignatureCard();

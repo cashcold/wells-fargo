@@ -1,4 +1,4 @@
-import { bankDb } from '../database';
+import { bankDb } from '../database.ts';
 
 const ADMIN_PASSWORD = 'admin12345@';
 
@@ -8,7 +8,15 @@ export default function handler(req: any, res: any) {
   }
 
   try {
-    const { username, password } = req.body || {};
+    let body = req.body;
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch {
+        // use as-is
+      }
+    }
+    const { username, password } = body || {};
     if (!username || !username.trim()) {
       return res.status(400).json({ success: false, error: 'Username is required' });
     }

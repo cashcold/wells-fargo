@@ -1,4 +1,4 @@
-import { bankDb } from './database';
+import { bankDb } from './database.ts';
 
 export default function handler(req: any, res: any) {
   if (req.method === 'POST') {

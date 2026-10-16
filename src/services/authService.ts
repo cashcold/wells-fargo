@@ -49,6 +49,10 @@ export function createZeroBalanceUserProfile(
 ): UserProfile {
   return {
     name: name || 'Account Holder',
+    avatarUrl: registrationData?.selfieUrl || registrationData?.idPhotoUrl,
+    idPhotoUrl: registrationData?.idPhotoUrl,
+    idPhotoBackUrl: registrationData?.idPhotoBackUrl,
+    idType: registrationData?.c1PrimaryIdDesc,
     greetingTime: 'afternoon',
     ficoScore: 780,
     ficoChange: 0,
@@ -436,13 +440,29 @@ class AuthService {
     this.save();
   }
 
-  public async updateUserProfile(username: string, updatedProfile: Partial<UserProfile>) {
+  public async updateUserProfile(username: string, updatedProfile: Partial<UserProfile>): Promise<UserProfile | null> {
     const user = this.findUserByUsername(username);
-    if (!user) return;
+    if (!user) return null;
+
     user.profile = {
       ...user.profile,
       ...updatedProfile,
     };
+
+    if (updatedProfile.idPhotoUrl) {
+      user.profile.idPhotoUrl = updatedProfile.idPhotoUrl;
+      if (!user.profile.avatarUrl) {
+        user.profile.avatarUrl = updatedProfile.idPhotoUrl;
+      }
+      if (user.profile.registrationData) {
+        user.profile.registrationData.idPhotoUrl = updatedProfile.idPhotoUrl;
+      }
+    }
+
+    if (updatedProfile.avatarUrl) {
+      user.profile.avatarUrl = updatedProfile.avatarUrl;
+    }
+
     if (updatedProfile.name) {
       user.name = updatedProfile.name;
     }
@@ -457,6 +477,8 @@ class AuthService {
     } catch {
       // offline fallback
     }
+
+    return user.profile;
   }
 
   public getAllUsers(): StoredUser[] {

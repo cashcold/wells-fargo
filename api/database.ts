@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { BankAccount, UserProfile, CheckDepositRecord, TreasuryTenderOrder, EnrollmentFormData } from '../src/types/banking';
+import os from 'os';
+import type { BankAccount, UserProfile, CheckDepositRecord, TreasuryTenderOrder, EnrollmentFormData } from '../src/types/banking.ts';
 
 export interface StoredDeposit {
   id: string;
@@ -38,8 +39,11 @@ export interface DatabaseSchema {
   version: number;
 }
 
-const DB_DIR = path.resolve(process.cwd(), 'data');
+// In Vercel serverless / AWS Lambda, the root is read-only except /tmp
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const DB_DIR = isServerless ? os.tmpdir() : path.resolve(process.cwd(), 'data');
 const DB_FILE = path.join(DB_DIR, 'bank_database.json');
+const ROOT_SEED_FILE = path.resolve(process.cwd(), 'data', 'bank_database.json');
 
 // Helper to create empty zero-balance accounts for a new user
 export function createZeroBalanceAccounts(userName: string, offerCode = 'JA23OU'): BankAccount[] {
@@ -76,6 +80,10 @@ export function createZeroBalanceUserProfile(
 ): UserProfile {
   return {
     name: name || 'Account Holder',
+    avatarUrl: registrationData?.selfieUrl || registrationData?.idPhotoUrl,
+    idPhotoUrl: registrationData?.idPhotoUrl,
+    idPhotoBackUrl: registrationData?.idPhotoBackUrl,
+    idType: registrationData?.c1PrimaryIdDesc,
     greetingTime: 'afternoon',
     ficoScore: 780,
     ficoChange: 0,
@@ -100,16 +108,20 @@ class BankDatabase {
 
   private loadDatabase(): DatabaseSchema {
     try {
-      if (!fs.existsSync(DB_DIR)) {
-        fs.mkdirSync(DB_DIR, { recursive: true });
-      }
-
       if (fs.existsSync(DB_FILE)) {
         const raw = fs.readFileSync(DB_FILE, 'utf-8');
         return JSON.parse(raw);
       }
+
+      // Check seed file in root data directory (for initial serverless deployment)
+      if (fs.existsSync(ROOT_SEED_FILE)) {
+        const raw = fs.readFileSync(ROOT_SEED_FILE, 'utf-8');
+        const parsed = JSON.parse(raw);
+        this.saveDatabase(parsed);
+        return parsed;
+      }
     } catch (e) {
-      console.error('Error reading database file, initializing fresh store:', e);
+      console.warn('Note: Could not read database file, initializing fresh store:', (e as any)?.message);
     }
 
     // Default clean database schema
@@ -174,11 +186,15 @@ class BankDatabase {
   private saveDatabase(dataToSave?: DatabaseSchema) {
     try {
       if (!fs.existsSync(DB_DIR)) {
-        fs.mkdirSync(DB_DIR, { recursive: true });
+        try {
+          fs.mkdirSync(DB_DIR, { recursive: true });
+        } catch {
+          // ignore directory creation error
+        }
       }
       fs.writeFileSync(DB_FILE, JSON.stringify(dataToSave || this.data, null, 2), 'utf-8');
     } catch (e) {
-      console.error('Failed to write database file:', e);
+      console.warn('Note: Database file write skipped, keeping in-memory:', (e as any)?.message);
     }
   }
 
@@ -216,6 +232,21 @@ class BankDatabase {
         existing.profile.name = existing.name;
         if (registrationData.c1HomePhone) existing.phone = registrationData.c1HomePhone;
         if (registrationData.email) existing.email = registrationData.email;
+        if (registrationData.idPhotoUrl) {
+          existing.profile.idPhotoUrl = registrationData.idPhotoUrl;
+          if (!existing.profile.avatarUrl) {
+            existing.profile.avatarUrl = registrationData.idPhotoUrl;
+          }
+        }
+        if (registrationData.selfieUrl) {
+          existing.profile.avatarUrl = registrationData.selfieUrl;
+        }
+        if (registrationData.idPhotoBackUrl) {
+          existing.profile.idPhotoBackUrl = registrationData.idPhotoBackUrl;
+        }
+        if (registrationData.c1PrimaryIdDesc) {
+          existing.profile.idType = registrationData.c1PrimaryIdDesc;
+        }
       }
       this.saveDatabase();
       return existing;
@@ -242,14 +273,32 @@ class BankDatabase {
     return newUser;
   }
 
-  public updateUserProfile(userId: string, updatedProfile: Partial<UserProfile>): StoredUser | null {
-    const user = this.data.users[userId];
+  public updateUserProfile(userIdOrUsername: string, updatedProfile: Partial<UserProfile>): StoredUser | null {
+    let user: StoredUser | undefined = this.data.users[userIdOrUsername];
+    if (!user) {
+      user = this.findUserByUsername(userIdOrUsername);
+    }
     if (!user) return null;
 
     user.profile = {
       ...user.profile,
       ...updatedProfile,
     };
+
+    if (updatedProfile.idPhotoUrl) {
+      user.profile.idPhotoUrl = updatedProfile.idPhotoUrl;
+      if (!user.profile.avatarUrl) {
+        user.profile.avatarUrl = updatedProfile.idPhotoUrl;
+      }
+      if (user.profile.registrationData) {
+        user.profile.registrationData.idPhotoUrl = updatedProfile.idPhotoUrl;
+      }
+    }
+
+    if (updatedProfile.avatarUrl) {
+      user.profile.avatarUrl = updatedProfile.avatarUrl;
+    }
+
     if (updatedProfile.name) {
       user.name = updatedProfile.name;
     }

@@ -145,6 +145,10 @@ export default function App() {
 
     setUserData({
       name: newCustomerName,
+      avatarUrl: fullData?.selfieUrl || fullData?.idPhotoUrl,
+      idPhotoUrl: fullData?.idPhotoUrl,
+      idPhotoBackUrl: fullData?.idPhotoBackUrl,
+      idType: fullData?.c1PrimaryIdDesc,
       greetingTime: 'afternoon',
       ficoScore: 780,
       ficoChange: 0,

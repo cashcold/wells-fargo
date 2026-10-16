@@ -27,6 +27,7 @@ import { AccountDetailModal } from './AccountDetailModal';
 import { AskFargoModal } from './AskFargoModal';
 import { AccountOpenFlow } from './AccountOpenFlow';
 import { WfLogo } from '../common/WfLogo';
+import { UserDetailsModal } from '../portal/UserDetailsModal';
 
 interface MobileShellProps {
   userData: UserProfile;
@@ -52,6 +53,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({
   const [isFargoOpen, setIsFargoOpen] = useState(false);
   const [isOpeningAccount, setIsOpeningAccount] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isUserDetailsOpen, setIsUserDetailsOpen] = useState(false);
 
   // Handler for making loan payment
   const handleMakeLoanPayment = (accountId: string, amount: number) => {
@@ -370,6 +372,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({
             onSelectAccount={(acc) => setSelectedAccount(acc)}
             onOpenNewAccount={() => setIsOpeningAccount(true)}
             onOpenAskFargo={() => setIsFargoOpen(true)}
+            onOpenProfile={() => setIsUserDetailsOpen(true)}
           />
         ) : activeTab === 'deposit' ? (
           <DepositTab
@@ -427,6 +430,17 @@ export const MobileShell: React.FC<MobileShellProps> = ({
           <div className="p-5 space-y-4">
             <h2 className="font-serif text-2xl text-stone-900">Menu & Services</h2>
             <div className="bg-white rounded-2xl border border-stone-200 divide-y divide-stone-100 overflow-hidden text-xs">
+              <button
+                onClick={() => setIsUserDetailsOpen(true)}
+                className="w-full text-left p-3.5 hover:bg-stone-50 font-medium text-stone-800 flex justify-between items-center"
+              >
+                <div className="flex items-center gap-2">
+                  <span>Profile & Government Photo ID</span>
+                </div>
+                <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                  {userData.idPhotoUrl ? 'CIP Verified' : 'Action Required'}
+                </span>
+              </button>
               <button
                 onClick={() => setIsOpeningAccount(true)}
                 className="w-full text-left p-3.5 hover:bg-stone-50 font-medium text-stone-800 flex justify-between items-center"
@@ -578,6 +592,14 @@ export const MobileShell: React.FC<MobileShellProps> = ({
           setIsOpeningAccount(false);
           setActiveTab(tab as any);
         }}
+      />
+
+      {/* User Details & ID Document Modal */}
+      <UserDetailsModal
+        isOpen={isUserDetailsOpen}
+        onClose={() => setIsUserDetailsOpen(false)}
+        userData={userData}
+        onUpdateUserData={onUpdateUserData}
       />
     </div>
   );

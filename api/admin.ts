@@ -1,4 +1,4 @@
-import { bankDb } from './database';
+import { bankDb } from './database.ts';
 
 const ADMIN_PASSWORD = 'admin12345@';
 

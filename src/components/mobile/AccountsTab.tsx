@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, PlusCircle, CreditCard, Landmark, PiggyBank, Home, Star, TrendingUp, Sparkles } from 'lucide-react';
+import { ChevronRight, PlusCircle, CreditCard, Landmark, PiggyBank, Home, Star, TrendingUp, Sparkles, User } from 'lucide-react';
 import { BankAccount, UserProfile } from '../../types/banking';
 import { useGreeting } from '../../utils/greeting';
 
@@ -8,6 +8,7 @@ interface AccountsTabProps {
   onSelectAccount: (account: BankAccount) => void;
   onOpenNewAccount: () => void;
   onOpenAskFargo: () => void;
+  onOpenProfile?: () => void;
 }
 
 export const AccountsTab: React.FC<AccountsTabProps> = ({
@@ -15,19 +16,43 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({
   onSelectAccount,
   onOpenNewAccount,
   onOpenAskFargo,
+  onOpenProfile,
 }) => {
   const greeting = useGreeting();
 
   return (
     <div className="space-y-4 p-4 sm:p-5">
       {/* Greeting Header matching EVD-app_promo-290x582.png */}
-      <div className="pt-1">
-        <h1 className="font-serif text-2xl sm:text-3xl text-stone-900 font-normal tracking-tight">
-          {greeting},
-        </h1>
-        <h2 className="font-serif text-2xl sm:text-3xl text-stone-900 font-normal">
-          {userData.name}
-        </h2>
+      <div className="pt-1 flex items-center justify-between">
+        <div>
+          <h1 className="font-serif text-2xl sm:text-3xl text-stone-900 font-normal tracking-tight">
+            {greeting},
+          </h1>
+          <h2 className="font-serif text-2xl sm:text-3xl text-stone-900 font-normal">
+            {userData.name}
+          </h2>
+        </div>
+        <button
+          type="button"
+          onClick={onOpenProfile}
+          className="cursor-pointer transition-transform hover:scale-105 active:scale-95 focus:outline-hidden"
+          title="View profile & verified ID"
+        >
+          {(userData.avatarUrl || userData.idPhotoUrl) ? (
+            <div className="relative shrink-0 ml-3" title="Verified Customer ID Photo">
+              <img
+                src={userData.avatarUrl || userData.idPhotoUrl}
+                alt={userData.name}
+                className="w-12 h-12 rounded-full object-cover border-2 border-[#ffcc00] shadow-xs bg-white"
+              />
+              <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white" />
+            </div>
+          ) : (
+            <div className="relative shrink-0 ml-3 w-12 h-12 rounded-full bg-stone-100 border-2 border-stone-300 flex items-center justify-center text-stone-400">
+              <User className="w-6 h-6" />
+            </div>
+          )}
+        </button>
       </div>
 
       {/* Account Cards Stack */}
