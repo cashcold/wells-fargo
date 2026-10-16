@@ -25,42 +25,51 @@ export default function App() {
   const [justSignedOff, setJustSignedOff] = useState(false);
 
   React.useEffect(() => {
-    try {
-      const pathname = window.location.pathname.toLowerCase();
-      const hash = window.location.hash.toLowerCase();
+    const handleNavigation = () => {
+      try {
+        const pathname = window.location.pathname.toLowerCase();
+        const hash = window.location.hash.toLowerCase();
 
-      if (pathname.includes('/admin') || hash.includes('admin')) {
-        setIsAdminPortalOpen(true);
-      } else if (pathname.includes('/login') || pathname.includes('/signon')) {
-        setIsSignOnOpen(true);
-      } else if (pathname.includes('/portal') || pathname.includes('/dashboard') || pathname.includes('/banking')) {
-        // Require authentication for online banking portal
-        setIsSignOnOpen(true);
-      } else if (pathname.includes('/enroll') || pathname.includes('/signature-card') || pathname.includes('/apply')) {
-        setIsSignatureCardOpen(true);
-      } else if (pathname.includes('/fargo')) {
-        setIsFargoOpen(true);
-      } else if (pathname.includes('/workflows') || pathname.includes('/apk') || pathname.includes('/android')) {
-        setIsWorkflowsOpen(true);
-      }
-
-      if (hash.includes('workflow') || hash.includes('apk') || hash.includes('android')) {
-        setIsWorkflowsOpen(true);
-      }
-
-      if (hash.includes('#path=')) {
-        const decoded = decodeURIComponent(hash.replace('#path=', ''));
-        if (decoded.includes('/admin')) setIsAdminPortalOpen(true);
-        if (decoded.includes('/login')) setIsSignOnOpen(true);
-        if (decoded.includes('/enroll')) setIsSignatureCardOpen(true);
-        if (decoded.includes('/workflows') || decoded.includes('/apk')) setIsWorkflowsOpen(true);
-        if (decoded.includes('/portal') || decoded.includes('/dashboard')) {
+        if (pathname.includes('/admin') || hash.includes('admin')) {
+          setIsAdminPortalOpen(true);
+        } else if (pathname.includes('/login') || pathname.includes('/signon')) {
           setIsSignOnOpen(true);
+        } else if (pathname.includes('/portal') || pathname.includes('/dashboard') || pathname.includes('/banking')) {
+          setIsSignOnOpen(true);
+        } else if (pathname.includes('/enroll') || pathname.includes('/signature-card') || pathname.includes('/apply')) {
+          setIsSignatureCardOpen(true);
+        } else if (pathname.includes('/fargo')) {
+          setIsFargoOpen(true);
+        } else if (pathname.includes('/workflows') || pathname.includes('/apk') || pathname.includes('/android')) {
+          setIsWorkflowsOpen(true);
         }
+
+        if (hash.includes('workflow') || hash.includes('apk') || hash.includes('android')) {
+          setIsWorkflowsOpen(true);
+        }
+
+        if (hash.includes('#path=')) {
+          const decoded = decodeURIComponent(hash.replace('#path=', ''));
+          if (decoded.includes('/admin')) setIsAdminPortalOpen(true);
+          if (decoded.includes('/login')) setIsSignOnOpen(true);
+          if (decoded.includes('/enroll')) setIsSignatureCardOpen(true);
+          if (decoded.includes('/workflows') || decoded.includes('/apk')) setIsWorkflowsOpen(true);
+          if (decoded.includes('/portal') || decoded.includes('/dashboard')) {
+            setIsSignOnOpen(true);
+          }
+        }
+      } catch (e) {
+        // Safe fallback
       }
-    } catch (e) {
-      // Safe fallback
-    }
+    };
+
+    handleNavigation();
+    window.addEventListener('hashchange', handleNavigation);
+    window.addEventListener('popstate', handleNavigation);
+    return () => {
+      window.removeEventListener('hashchange', handleNavigation);
+      window.removeEventListener('popstate', handleNavigation);
+    };
   }, []);
 
   const handleLoginSuccess = async (enteredName: string, profileData?: any) => {
@@ -244,7 +253,12 @@ export default function App() {
       {/* Admin Operations & Deposit Approval Portal */}
       <AdminPortalModal
         isOpen={isAdminPortalOpen}
-        onClose={() => setIsAdminPortalOpen(false)}
+        onClose={() => {
+          setIsAdminPortalOpen(false);
+          if (window.location.hash.toLowerCase().includes('admin')) {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          }
+        }}
         onDepositApproved={handleDepositApproved}
       />
 

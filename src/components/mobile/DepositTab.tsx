@@ -181,16 +181,6 @@ export const DepositTab: React.FC<DepositTabProps> = ({
             <p className="text-[11px] text-amber-800 leading-relaxed">
               In accordance with Wells Fargo security guidelines, all check deposits are held in queue until approved by bank operations. Once approved, the funds will immediately credit to your available balance.
             </p>
-            {onOpenAdminPortal && (
-              <button
-                type="button"
-                onClick={onOpenAdminPortal}
-                className="w-full mt-1 bg-[#1c1917] hover:bg-black text-amber-300 py-2 rounded-lg font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                <span>Open Admin Portal to Approve Deposit</span>
-              </button>
-            )}
           </div>
         </div>
 

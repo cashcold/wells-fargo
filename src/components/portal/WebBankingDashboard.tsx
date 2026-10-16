@@ -418,18 +418,6 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Admin Portal Button */}
-              {onOpenAdminPortal && (
-                <button
-                  onClick={onOpenAdminPortal}
-                  className="inline-flex items-center gap-1.5 bg-black/35 hover:bg-black/50 text-amber-300 px-2.5 py-1.5 rounded-full text-xs font-bold transition-colors border border-amber-300/40 shadow-xs cursor-pointer"
-                  title="Open Admin Operations Console"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="hidden sm:inline">Admin Portal</span>
-                </button>
-              )}
-
               {/* View Registration & Profile Details Button */}
               <button
                 onClick={() => setIsUserDetailsOpen(true)}

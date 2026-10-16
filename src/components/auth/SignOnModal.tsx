@@ -89,19 +89,6 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
             <Lock className="w-3.5 h-3.5" />
             <span>Enroll</span>
           </button>
-          {onOpenAdminPortal && (
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onOpenAdminPortal();
-              }}
-              className="bg-black/20 hover:bg-black/30 text-amber-300 px-2.5 py-1 rounded-full text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Admin Portal</span>
-            </button>
-          )}
           <span className="hidden md:inline hover:underline cursor-pointer">Customer Service</span>
           <span className="hidden md:inline hover:underline cursor-pointer">ATMs/Locations</span>
           <span className="hidden sm:inline hover:underline cursor-pointer">Español</span>

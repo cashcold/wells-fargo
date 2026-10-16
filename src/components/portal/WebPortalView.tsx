@@ -194,18 +194,6 @@ export const WebPortalView: React.FC<WebPortalViewProps> = ({
               <Search className="w-4 h-4" />
             </button>
 
-            {/* Admin Operations Portal Button */}
-            {onOpenAdminPortal && (
-              <button
-                onClick={onOpenAdminPortal}
-                className="bg-black/25 hover:bg-black/40 text-amber-300 border border-amber-300/40 px-3 py-1.5 rounded-full text-xs font-bold transition-colors shadow-2xs whitespace-nowrap cursor-pointer flex items-center gap-1.5"
-                title="Admin Portal - Deposit Approvals & User Verification"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">Admin Portal</span>
-              </button>
-            )}
-
             {/* Sign on Pill Button matching Screenshot 1 */}
             {isLoggedIn ? (
               <button
