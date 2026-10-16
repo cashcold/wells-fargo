@@ -10,6 +10,7 @@ import { AccountOpenFlow } from './components/mobile/AccountOpenFlow';
 import { AndroidWorkflowsModal } from './components/workflow/AndroidWorkflowsModal';
 import { AdminPortalModal } from './components/admin/AdminPortalModal';
 import { Sparkles, HelpCircle } from 'lucide-react';
+import { authService } from './services/authService';
 
 export default function App() {
   const [userData, setUserData] = useState<UserProfile>(INITIAL_USER_DATA);
@@ -72,6 +73,12 @@ export default function App() {
       return;
     }
 
+    const localUser = authService.findUserByUsername(enteredName);
+    if (localUser?.profile) {
+      setUserData(localUser.profile);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/user/${encodeURIComponent(enteredName)}`);
       const data = await res.json();
@@ -79,19 +86,9 @@ export default function App() {
         setUserData(data.user.profile);
         return;
       }
-    } catch (err) {
-      // fallback
+    } catch {
+      // safe fallback
     }
-
-    const cleanName = enteredName.trim().replace(/_wf$/i, '');
-    const displayName = cleanName
-      ? cleanName.charAt(0).toUpperCase() + cleanName.slice(1)
-      : 'Account Holder';
-
-    setUserData((prev) => ({
-      ...prev,
-      name: displayName,
-    }));
   };
 
   const handleSignOff = () => {
@@ -244,7 +241,7 @@ export default function App() {
         onEnrollSuccess={handleEnrollSuccess}
       />
 
-      {/* Admin Operations & Deposit Approval Portal (Password: admin12345@) */}
+      {/* Admin Operations & Deposit Approval Portal */}
       <AdminPortalModal
         isOpen={isAdminPortalOpen}
         onClose={() => setIsAdminPortalOpen(false)}

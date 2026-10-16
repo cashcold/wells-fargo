@@ -121,6 +121,56 @@
           "c1Dob": "01/15/1990"
         }
       }
+    },
+    "usr-1792107817708-374": {
+      "id": "usr-1792107817708-374",
+      "username": "sarah_miller",
+      "password": "SecurePassword99!",
+      "name": "Sarah Miller",
+      "email": "sarah@example.com",
+      "phone": "(555) 234-5678",
+      "createdAt": "2026-10-15T23:43:37.746Z",
+      "role": "customer",
+      "profile": {
+        "name": "Sarah Miller",
+        "greetingTime": "afternoon",
+        "ficoScore": 780,
+        "ficoChange": 0,
+        "ficoUpdatedDate": "10/15/2026",
+        "unreadNotifications": 1,
+        "bonusCode": "JA23OU",
+        "accounts": [
+          {
+            "id": "checking-1038",
+            "name": "EVERYDAY CHECKING",
+            "accountNumber": "..1038",
+            "routingNumber": "061000227",
+            "type": "checking",
+            "availableBalance": 0,
+            "currentBalance": 0,
+            "transactions": []
+          },
+          {
+            "id": "savings-4683",
+            "name": "WAY2SAVE SAVINGS",
+            "accountNumber": "..4683",
+            "routingNumber": "061000227",
+            "type": "savings",
+            "availableBalance": 0,
+            "currentBalance": 0,
+            "transactions": []
+          }
+        ],
+        "bills": [],
+        "recentDeposits": [],
+        "treasuryHoldings": [],
+        "voiceNotes": [],
+        "registrationData": {
+          "c1FullName": "Sarah Miller",
+          "email": "sarah@example.com",
+          "c1HomePhone": "(555) 234-5678"
+        }
+      }
     }
   },
   "deposits": [

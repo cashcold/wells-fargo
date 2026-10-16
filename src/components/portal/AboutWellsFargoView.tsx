@@ -1456,13 +1456,15 @@ export const AboutWellsFargoView: React.FC<AboutWellsFargoViewProps> = ({
                   <label className="block text-stone-700 font-semibold mb-1">Network Password / VIP Token</label>
                   <input
                     type="password"
-                    placeholder="••••••••••••"
                     className="w-full px-3 py-2 border border-stone-300 rounded-lg bg-stone-50"
                   />
                 </div>
                 <button
                   type="button"
-                  onClick={() => alert('Simulating employee secure login authentication...')}
+                  onClick={() => {
+                    setActiveModal(null);
+                    onOpenSignOn();
+                  }}
                   className="w-full bg-[#d71e28] hover:bg-[#b0141d] text-white py-2.5 rounded-xl font-semibold cursor-pointer"
                 >
                   Sign On to Teamworks

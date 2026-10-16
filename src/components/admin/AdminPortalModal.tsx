@@ -272,7 +272,6 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                       setPasswordInput(e.target.value);
                       setAuthError('');
                     }}
-                    placeholder="Enter admin password"
                     className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2.5 text-sm font-mono text-stone-900 focus:outline-none focus:border-[#d71e28] focus:ring-1 focus:ring-[#d71e28]"
                     autoFocus
                   />
@@ -284,13 +283,6 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                     <span>{authError}</span>
                   </p>
                 )}
-              </div>
-
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-left text-xs text-amber-900">
-                <span className="font-semibold block mb-0.5">Admin Security Prompt</span>
-                <span className="text-[11px] text-amber-800">
-                  Password configured for this deployment: <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-amber-300 font-bold">admin12345@</code>
-                </span>
               </div>
 
               <button
@@ -367,7 +359,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
 
               <div className="flex items-center gap-2 text-xs text-stone-600">
                 <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="font-medium">Admin Mode Active (admin12345@)</span>
+                <span className="font-medium">Admin Mode Active</span>
               </div>
             </div>
 

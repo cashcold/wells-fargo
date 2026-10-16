@@ -974,7 +974,6 @@ export const CorporateInvestmentBankingView: React.FC<CorporateInvestmentBanking
                 <label className="block font-semibold text-stone-700 mb-1">Password / RSA SecurID</label>
                 <input
                   type="password"
-                  placeholder="Enter Token or Password"
                   value={vantagePassword}
                   onChange={(e) => setVantagePassword(e.target.value)}
                   className="w-full border border-stone-300 rounded-lg p-2.5 text-stone-900 focus:outline-none focus:border-[#d71e28]"

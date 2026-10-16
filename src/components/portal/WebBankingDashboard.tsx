@@ -722,7 +722,7 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                   >
                     <span className="flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-amber-700" />
-                      <span>Admin Operations & Approvals (admin12345@)</span>
+                      <span>Admin Operations & Approvals</span>
                     </span>
                     <ChevronRight className="w-4 h-4 text-amber-600" />
                   </button>

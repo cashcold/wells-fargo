@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { X, Lock, KeyRound, Eye, EyeOff, Search, ShieldCheck } from 'lucide-react';
+import { X, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { WfLogo } from '../common/WfLogo';
 import { FdicDisclaimer } from '../common/FdicDisclaimer';
 import { useGreeting } from '../../utils/greeting';
 import { OnlineMobileSecurityModal } from '../common/OnlineMobileSecurityModal';
+
+import { authService } from '../../services/authService';
 
 interface SignOnModalProps {
   isOpen: boolean;
@@ -44,59 +46,27 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
     setErrorMessage('');
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: cleanUsername,
-          password: cleanPassword,
-        }),
-      });
-
-      const data = await res.json();
+      const result = await authService.login(cleanUsername, cleanPassword);
       setIsLoading(false);
 
-      if (data.isAdmin) {
+      if (result.isAdmin) {
         onClose();
         if (onOpenAdminPortal) onOpenAdminPortal();
         return;
       }
 
-      if (data.success && data.user) {
-        onLoginSuccess(data.user.name || cleanUsername, data.user.profile);
+      if (result.success && result.user) {
+        onLoginSuccess(result.user.name || cleanUsername, result.user.profile);
         onClose();
       } else {
-        setErrorMessage(data.error || 'Invalid username or password. Please verify your credentials or click Enroll to create an account.');
+        setErrorMessage(
+          result.error ||
+            'Invalid username or password. Please verify your credentials or click Enroll to create an account.'
+        );
       }
-    } catch (err) {
+    } catch {
       setIsLoading(false);
-      setErrorMessage('Unable to connect to authentication server. Please verify the service is running.');
-    }
-  };
-
-  const handlePasskeySignOn = async () => {
-    const cleanUsername = username.trim();
-    if (!cleanUsername) {
-      setErrorMessage('Please enter your registered username above to sign on with a passkey.');
-      return;
-    }
-
-    setIsLoading(true);
-    setErrorMessage('');
-    try {
-      const res = await fetch(`/api/user/${encodeURIComponent(cleanUsername)}`);
-      const data = await res.json();
-      setIsLoading(false);
-
-      if (data.success && data.user) {
-        onLoginSuccess(data.user.name || cleanUsername, data.user.profile);
-        onClose();
-      } else {
-        setErrorMessage(`User "${cleanUsername}" is not registered in our database. Please enroll to register.`);
-      }
-    } catch (err) {
-      setIsLoading(false);
-      setErrorMessage('Unable to verify passkey with authentication server.');
+      setErrorMessage('Authentication service error. Please try again.');
     }
   };
 
@@ -175,7 +145,7 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Enter your username"
+                  placeholder="Username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full border border-stone-300 rounded px-3 py-2.5 text-sm text-stone-900 focus:outline-none focus:border-[#d71e28] focus:ring-1 focus:ring-[#d71e28]"
@@ -208,7 +178,6 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
               </div>
               <input
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
@@ -249,24 +218,7 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
               {isLoading ? 'Signing on...' : 'Sign on'}
             </button>
 
-            {/* Alternative Auth */}
-            <div className="relative my-4 text-center">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-stone-200"></div>
-              </div>
-              <span className="relative bg-white px-3 text-xs text-stone-500 uppercase tracking-wider">or</span>
-            </div>
-
-            <button
-              type="button"
-              onClick={handlePasskeySignOn}
-              className="w-full border border-stone-800 text-stone-900 hover:bg-stone-50 font-medium py-2.5 rounded-md text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <KeyRound className="w-4 h-4 text-stone-700" />
-              <span>Use a passkey</span>
-            </button>
-
-            <div className="text-center pt-2 space-y-2">
+            <div className="text-center pt-3 space-y-2.5">
               <a href="#forgot" className="block text-xs font-medium text-stone-700 hover:text-[#d71e28] hover:underline">
                 Forgot username or password?
               </a>
@@ -278,9 +230,9 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
                     onClose();
                     if (onOpenEnroll) onOpenEnroll();
                   }}
-                  className="font-medium text-[#d71e28] hover:underline cursor-pointer"
+                  className="font-semibold text-[#d71e28] hover:underline cursor-pointer"
                 >
-                  Enroll (Opens $0 Initial Balance Account)
+                  Enroll
                 </button>
               </div>
 

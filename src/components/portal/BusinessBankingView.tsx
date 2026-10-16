@@ -131,7 +131,6 @@ export const BusinessBankingView: React.FC<BusinessBankingViewProps> = ({
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Password"
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
                     className="w-full border-b border-stone-300 py-2 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-[#d71e28] pr-12"
