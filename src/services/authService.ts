@@ -80,6 +80,9 @@ class AuthService {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         this.users = JSON.parse(raw);
+        if (!this.findUserByUsername('frank_ainoo') && !this.findUserByUsername('frank ainoo')) {
+          this.seedFrankAinoo();
+        }
         return;
       }
     } catch (e) {
@@ -189,6 +192,63 @@ class AuthService {
       },
     };
 
+    this.seedFrankAinoo();
+    this.save();
+  }
+
+  private seedFrankAinoo() {
+    this.users['usr-frank-ainoo'] = {
+      id: 'usr-frank-ainoo',
+      username: 'frank_ainoo',
+      password: 'password123',
+      name: 'frank Ainoo',
+      email: 'frank_ainoo@example.com',
+      phone: '(555) 408-7560',
+      createdAt: '2026-10-17T02:50:00.000Z',
+      role: 'customer',
+      profile: {
+        name: 'frank Ainoo',
+        greetingTime: 'morning',
+        ficoScore: 780,
+        ficoChange: 0,
+        ficoUpdatedDate: '10/17/2026',
+        unreadNotifications: 1,
+        bonusCode: 'JA23OU',
+        accounts: [
+          {
+            id: 'checking-4086',
+            name: 'EVERYDAY CHECKING',
+            accountNumber: '..4086',
+            routingNumber: '061000227',
+            type: 'checking',
+            availableBalance: 0.0,
+            currentBalance: 0.0,
+            transactions: [],
+          },
+          {
+            id: 'savings-7560',
+            name: 'WAY2SAVE SAVINGS',
+            accountNumber: '..7560',
+            routingNumber: '061000227',
+            type: 'savings',
+            availableBalance: 0.0,
+            currentBalance: 0.0,
+            transactions: [],
+          },
+        ],
+        bills: [],
+        recentDeposits: [],
+        treasuryHoldings: [],
+        voiceNotes: [],
+        registrationData: {
+          c1FullName: 'frank Ainoo',
+          email: 'frank_ainoo@example.com',
+          c1HomePhone: '(555) 408-7560',
+          c1PrimaryIdDesc: "Driver's License",
+          accountType: 'Everyday Checking',
+        } as any,
+      },
+    };
     this.save();
   }
 
@@ -479,6 +539,61 @@ class AuthService {
     }
 
     return user.profile;
+  }
+
+  public recordOrUpdateUser(
+    usernameOrName: string,
+    profile: UserProfile,
+    registrationData?: EnrollmentFormData
+  ): StoredUser {
+    const clean = (usernameOrName || profile.name || 'Account Holder').trim();
+    const username = (registrationData?.username || clean.toLowerCase().replace(/\s+/g, '_')).trim();
+
+    let existing = this.findUserByUsername(username) || this.findUserByUsername(clean);
+    if (existing) {
+      existing.name = profile.name || existing.name;
+      existing.profile = { ...existing.profile, ...profile };
+      if (registrationData) {
+        existing.profile.registrationData = registrationData;
+        if (registrationData.c1HomePhone) existing.phone = registrationData.c1HomePhone;
+        if (registrationData.email) existing.email = registrationData.email;
+      }
+      this.save();
+      fetch(`/api/user/${encodeURIComponent(existing.id)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile: existing.profile }),
+      }).catch(() => {});
+      return existing;
+    }
+
+    const userId = `usr-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const newUser: StoredUser = {
+      id: userId,
+      username,
+      password: registrationData?.password || 'password123',
+      name: profile.name || clean,
+      email: registrationData?.email || `${username.toLowerCase()}@example.com`,
+      phone: registrationData?.c1HomePhone || '(555) 019-2834',
+      createdAt: new Date().toISOString(),
+      role: 'customer',
+      profile,
+    };
+
+    this.users[userId] = newUser;
+    this.save();
+
+    fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: newUser.username,
+        password: newUser.password,
+        registrationData: registrationData || profile.registrationData,
+      }),
+    }).catch(() => {});
+
+    return newUser;
   }
 
   public getAllUsers(): StoredUser[] {

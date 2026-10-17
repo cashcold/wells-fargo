@@ -1,8 +1,9 @@
 import { bankDb } from '../database.ts';
+import { getAllDepositsFromMongo } from '../mongo.ts';
 
 const ADMIN_PASSWORD = 'admin12345@';
 
-export default function handler(req: any, res: any) {
+export default async function handler(req: any, res: any) {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
 
   const adminKey =
@@ -16,7 +17,14 @@ export default function handler(req: any, res: any) {
   }
 
   try {
-    const deposits = bankDb.getDeposits();
+    const mongoDeposits = await getAllDepositsFromMongo();
+    const localDeposits = bankDb.getDeposits();
+    const depositMap = new Map<string, any>();
+
+    localDeposits.forEach((d) => depositMap.set(d.id, d));
+    mongoDeposits.forEach((d) => depositMap.set(d.id, { ...depositMap.get(d.id), ...d }));
+
+    const deposits = Array.from(depositMap.values());
     return res.status(200).json({ success: true, deposits });
   } catch (err: any) {
     console.error('Failed to get deposits for admin:', err);

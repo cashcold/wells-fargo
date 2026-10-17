@@ -143,13 +143,13 @@ export default function App() {
       },
     ];
 
-    setUserData({
+    const newProfile: UserProfile = {
       name: newCustomerName,
       avatarUrl: fullData?.selfieUrl || fullData?.idPhotoUrl,
       idPhotoUrl: fullData?.idPhotoUrl,
       idPhotoBackUrl: fullData?.idPhotoBackUrl,
       idType: fullData?.c1PrimaryIdDesc,
-      greetingTime: 'afternoon',
+      greetingTime: 'morning',
       ficoScore: 780,
       ficoChange: 0,
       ficoUpdatedDate: new Date().toLocaleDateString('en-US'),
@@ -161,8 +161,16 @@ export default function App() {
       treasuryHoldings: [],
       voiceNotes: [],
       registrationData: fullData,
-    });
+    };
 
+    // Immediately record to live unified database (server + local storage)
+    authService.recordOrUpdateUser(
+      fullData?.username || newCustomerName,
+      newProfile,
+      fullData
+    );
+
+    setUserData(newProfile);
     setIsAccountOpenFlowActive(true);
   };
 

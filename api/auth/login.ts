@@ -1,8 +1,9 @@
 import { bankDb } from '../database.ts';
+import { getUserFromMongo } from '../mongo.ts';
 
 const ADMIN_PASSWORD = 'admin12345@';
 
-export default function handler(req: any, res: any) {
+export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
@@ -44,8 +45,8 @@ export default function handler(req: any, res: any) {
       }
     }
 
-    // Normal User Lookup in database
-    const user = bankDb.findUserByUsername(cleanUsername);
+    // Normal User Lookup in database or MongoDB Atlas
+    const user = bankDb.findUserByUsername(cleanUsername) || (await getUserFromMongo(cleanUsername));
 
     // User does NOT exist in database
     if (!user) {

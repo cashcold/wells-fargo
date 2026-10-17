@@ -1,6 +1,7 @@
 import { bankDb } from './database.ts';
+import { saveDepositToMongo } from './mongo.ts';
 
-export default function handler(req: any, res: any) {
+export default async function handler(req: any, res: any) {
   if (req.method === 'POST') {
     try {
       const { userId, userName, targetAccountId, targetAccountName, amount, frontImage, backImage } = req.body || {};
@@ -18,6 +19,9 @@ export default function handler(req: any, res: any) {
         frontImage: frontImage || '',
         backImage: backImage || '',
       });
+
+      // Save deposit document into MongoDB Atlas
+      await saveDepositToMongo(deposit);
 
       return res.status(201).json({
         success: true,

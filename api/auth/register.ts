@@ -1,6 +1,7 @@
 import { bankDb } from '../database.ts';
+import { saveUserToMongo, getUserFromMongo } from '../mongo.ts';
 
-export default function handler(req: any, res: any) {
+export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
@@ -26,8 +27,8 @@ export default function handler(req: any, res: any) {
       return res.status(400).json({ success: false, error: 'Password must be at least 4 characters long' });
     }
 
-    // Check if username is already taken by another registered customer
-    const existing = bankDb.findUserByUsername(regUsername);
+    // Check if username is already taken in local memory or MongoDB Atlas
+    const existing = bankDb.findUserByUsername(regUsername) || (await getUserFromMongo(regUsername));
     if (existing) {
       return res.status(409).json({
         success: false,
@@ -36,6 +37,9 @@ export default function handler(req: any, res: any) {
     }
 
     const user = bankDb.registerUser(regUsername, regPassword, registrationData);
+
+    // Persist directly to MongoDB Atlas cloud database
+    await saveUserToMongo(user);
 
     return res.status(201).json({
       success: true,

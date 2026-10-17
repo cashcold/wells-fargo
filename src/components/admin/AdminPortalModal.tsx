@@ -625,16 +625,20 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-stone-50 p-4 rounded-xl border border-stone-200">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <h4 className="font-bold text-sm text-stone-900">
                           Registered User Records in Database
                         </h4>
-                        <span className="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2 py-0.5 rounded-full">
-                          {users.length} Registered
+                        <span className="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>MongoDB Atlas: Connected</span>
+                        </span>
+                        <span className="bg-stone-200 text-stone-700 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                          {users.length} Accounts
                         </span>
                       </div>
                       <p className="text-xs text-stone-500 mt-0.5">
-                        Live unified database (server + local storage). All newly opened accounts appear here automatically.
+                        Live synced with MongoDB Atlas (<code className="font-mono text-stone-700 bg-stone-200/60 px-1 py-0.5 rounded text-[10px]">WellsFargo.users</code>). All newly opened accounts are permanently saved in cloud storage.
                       </p>
                     </div>
 
