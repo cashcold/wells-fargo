@@ -57,21 +57,37 @@ export async function getDepositsCollection(): Promise<Collection<any>> {
 export async function saveUserToMongo(user: any): Promise<boolean> {
   try {
     const col = await getUsersCollection();
+    const cleanUsername = (user.username || '').trim().toLowerCase();
+    const existing = await col.findOne({
+      $or: [
+        { username: cleanUsername },
+        { username: { $regex: new RegExp(`^${cleanUsername}$`, 'i') } },
+        { id: user.id },
+        { _id: user.id },
+      ],
+    });
+
+    const docId = existing?._id || user.id || `usr-${Date.now()}`;
     const doc = {
-      _id: user.id,
-      id: user.id,
+      _id: docId,
+      id: docId,
       username: user.username,
-      password: user.password,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      createdAt: user.createdAt || new Date().toISOString(),
+      password: user.password || existing?.password || 'password123',
+      name: user.name || existing?.name || user.username,
+      email: user.email || existing?.email,
+      phone: user.phone || existing?.phone,
+      createdAt: user.createdAt || existing?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      role: user.role || 'customer',
-      profile: user.profile,
+      role: user.role || existing?.role || 'customer',
+      profile: {
+        ...(existing?.profile || {}),
+        ...(user.profile || {}),
+        accounts: user.profile?.accounts || existing?.profile?.accounts || [],
+        registrationData: user.profile?.registrationData || existing?.profile?.registrationData,
+      },
     };
 
-    await col.updateOne({ _id: user.id }, { $set: doc }, { upsert: true });
+    await col.updateOne({ _id: docId }, { $set: doc }, { upsert: true });
     return true;
   } catch (err: any) {
     console.error('Failed to save user to MongoDB Atlas:', err.message);
@@ -107,7 +123,7 @@ export async function getUserFromMongo(username: string): Promise<any | null> {
 export async function getAllUsersFromMongo(): Promise<any[]> {
   try {
     const col = await getUsersCollection();
-    const docs = await col.find({}).sort({ createdAt: -1 }).toArray();
+    const docs = await col.find({}).sort({ updatedAt: -1, createdAt: -1 }).toArray();
     return docs.map((d) => ({
       id: d.id || d._id,
       username: d.username,
@@ -116,6 +132,7 @@ export async function getAllUsersFromMongo(): Promise<any[]> {
       email: d.email,
       phone: d.phone,
       createdAt: d.createdAt,
+      updatedAt: d.updatedAt,
       role: d.role,
       profile: d.profile,
     }));

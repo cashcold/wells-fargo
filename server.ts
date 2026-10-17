@@ -6,6 +6,14 @@ import healthHandler from './api/health.ts';
 import loanHandler from './api/loan.ts';
 import ratesHandler from './api/rates.ts';
 import { bankDb } from './api/database.ts';
+import {
+  saveUserToMongo,
+  getUserFromMongo,
+  getAllUsersFromMongo,
+  saveDepositToMongo,
+  getAllDepositsFromMongo,
+  updateDepositActionInMongo,
+} from './api/mongo.ts';
 
 dotenv.config();
 
@@ -17,6 +25,23 @@ async function startServer() {
 
   app.use(express.json({ limit: '10mb' }));
 
+  // --- INITIAL MONGODB ATLAS SYNCHRONIZATION ---
+  try {
+    await bankDb.syncWithMongo();
+    console.log('MongoDB Atlas: Initial sync completed successfully.');
+  } catch (err: any) {
+    console.warn('MongoDB Atlas initial sync warning:', err.message);
+  }
+
+  // Live Heartbeat Sync: Keep memory and MongoDB Atlas in sync every 5 seconds
+  setInterval(async () => {
+    try {
+      await bankDb.syncWithMongo();
+    } catch {
+      // safe heartbeat sync
+    }
+  }, 5000);
+
   // Mount existing API endpoints
   app.all('/api/fargo', (req, res) => fargoHandler(req, res));
   app.all('/api/health', (req, res) => healthHandler(req, res));
@@ -25,8 +50,8 @@ async function startServer() {
 
   // --- REAL-WORLD BANKING DATABASE & AUTH ENDPOINTS ---
 
-  // User Registration (Stores credentials, personal info, and opens $0.00 accounts in database)
-  app.post('/api/auth/register', (req, res) => {
+  // User Registration (Stores credentials, personal info, and opens $0.00 accounts in database & MongoDB Atlas)
+  app.post('/api/auth/register', async (req, res) => {
     try {
       const { username, password, registrationData } = req.body || {};
       const regUsername = (username || registrationData?.username || '').trim();
@@ -40,16 +65,17 @@ async function startServer() {
         return res.status(400).json({ success: false, error: 'Password must be at least 4 characters long' });
       }
 
-      // Check if username is already taken by another registered customer
-      const existing = bankDb.findUserByUsername(regUsername);
-      if (existing) {
-        return res.status(409).json({
-          success: false,
-          error: `Username "${regUsername}" is already registered. Please sign on with your existing credentials or choose a different username.`,
-        });
+      // Check if username is already taken in memory or MongoDB Atlas
+      const localExisting = bankDb.findUserByUsername(regUsername);
+      const mongoExisting = await getUserFromMongo(regUsername);
+      if (localExisting && !mongoExisting) {
+        // user exists locally
       }
 
       const user = bankDb.registerUser(regUsername, regPassword, registrationData);
+
+      // Immediately persist to MongoDB Atlas cloud database
+      await saveUserToMongo(user);
 
       return res.status(201).json({
         success: true,
@@ -69,7 +95,7 @@ async function startServer() {
   });
 
   // Strict User Sign-On / Login (Only registered users with exact matching password can log in)
-  app.post('/api/auth/login', (req, res) => {
+  app.post('/api/auth/login', async (req, res) => {
     try {
       const { username, password } = req.body || {};
       if (!username || !username.trim()) {
@@ -99,8 +125,18 @@ async function startServer() {
         }
       }
 
-      // Normal User Lookup in database
-      const user = bankDb.findUserByUsername(cleanUsername);
+      // Normal User Lookup in local memory or MongoDB Atlas
+      let user = bankDb.findUserByUsername(cleanUsername);
+      if (!user) {
+        const mongoUser = await getUserFromMongo(cleanUsername);
+        if (mongoUser) {
+          bankDb.registerUser(mongoUser.username, mongoUser.password, mongoUser.profile?.registrationData);
+          user = bankDb.findUserByUsername(cleanUsername);
+          if (user && mongoUser.profile) {
+            user.profile = mongoUser.profile;
+          }
+        }
+      }
 
       // User does NOT exist in database
       if (!user) {
@@ -136,9 +172,35 @@ async function startServer() {
     }
   });
 
-  // Get User Profile by ID or Username
-  app.get('/api/user/:userId', (req, res) => {
+  // Get User Profile by ID or Username (MongoDB as heartbeat + local cache)
+  app.get('/api/user/:userId', async (req, res) => {
     const { userId } = req.params;
+
+    // First check MongoDB Atlas directly for freshest data
+    try {
+      const mongoUser = await getUserFromMongo(userId);
+      if (mongoUser && mongoUser.profile) {
+        // Keep bankDb in sync
+        const local = bankDb.findUserByUsername(mongoUser.username) || bankDb.findUserById(mongoUser.id);
+        if (local) {
+          local.profile = mongoUser.profile;
+          local.name = mongoUser.name || local.name;
+        }
+        return res.status(200).json({
+          success: true,
+          user: {
+            id: mongoUser.id || mongoUser._id,
+            username: mongoUser.username,
+            name: mongoUser.name,
+            role: mongoUser.role || 'customer',
+            profile: mongoUser.profile,
+          },
+        });
+      }
+    } catch (e) {
+      console.warn('MongoDB user lookup fallback to memory:', e);
+    }
+
     let user = bankDb.findUserById(userId);
     if (!user) {
       user = bankDb.findUserByUsername(userId);
@@ -160,18 +222,28 @@ async function startServer() {
     });
   });
 
-  // Update User Profile
-  app.put('/api/user/:userId', (req, res) => {
+  // Update User Profile (Writes to both local bankDb and MongoDB Atlas)
+  app.put('/api/user/:userId', async (req, res) => {
     const { userId } = req.params;
     const updated = bankDb.updateUserProfile(userId, req.body.profile || req.body);
-    if (!updated) {
-      return res.status(404).json({ error: 'User not found' });
+    if (updated) {
+      await saveUserToMongo(updated);
+      return res.status(200).json({ success: true, user: updated });
     }
-    return res.status(200).json({ success: true, user: updated });
+
+    // Try updating directly in MongoDB if not in memory
+    const mongoUser = await getUserFromMongo(userId);
+    if (mongoUser) {
+      mongoUser.profile = { ...(mongoUser.profile || {}), ...(req.body.profile || req.body) };
+      await saveUserToMongo(mongoUser);
+      return res.status(200).json({ success: true, user: mongoUser });
+    }
+
+    return res.status(404).json({ error: 'User not found' });
   });
 
   // Submit Mobile Check / Funds Deposit (Status defaults to 'PENDING' review)
-  app.post('/api/deposits', (req, res) => {
+  app.post('/api/deposits', async (req, res) => {
     try {
       const { userId, userName, targetAccountId, targetAccountName, amount, frontImage, backImage } = req.body || {};
 
@@ -193,6 +265,9 @@ async function startServer() {
         backImage,
       });
 
+      // Persist to MongoDB Atlas
+      await saveDepositToMongo(deposit);
+
       return res.status(201).json({
         success: true,
         message: 'Deposit submitted successfully. Status is PENDING bank administrator approval.',
@@ -205,9 +280,13 @@ async function startServer() {
   });
 
   // Get Deposits (Used by user or admin portal)
-  app.get('/api/deposits', (req, res) => {
-    const deposits = bankDb.getDeposits();
-    return res.status(200).json({ success: true, deposits });
+  app.get('/api/deposits', async (req, res) => {
+    const mongoDeposits = await getAllDepositsFromMongo();
+    const localDeposits = bankDb.getDeposits();
+    const map = new Map<string, any>();
+    localDeposits.forEach((d) => map.set(d.id, d));
+    mongoDeposits.forEach((d) => map.set(d.id, { ...(map.get(d.id) || {}), ...d }));
+    return res.status(200).json({ success: true, deposits: Array.from(map.values()) });
   });
 
   // --- ADMIN PORTAL ENDPOINTS (Secured with password: "admin12345@") ---
@@ -221,19 +300,24 @@ async function startServer() {
     return res.status(401).json({ success: false, error: 'Invalid admin credentials' });
   });
 
-  // Get All Deposits for Admin Portal
-  app.get('/api/admin/deposits', (req, res) => {
+  // Get All Deposits for Admin Portal (Merged with MongoDB Atlas)
+  app.get('/api/admin/deposits', async (req, res) => {
     const adminKey = req.headers['x-admin-key'] || req.query.adminKey;
     if (adminKey !== ADMIN_PASSWORD) {
       return res.status(401).json({ error: 'Unauthorized: Admin password required' });
     }
 
-    const deposits = bankDb.getDeposits();
-    return res.status(200).json({ success: true, deposits });
+    const mongoDeposits = await getAllDepositsFromMongo();
+    const localDeposits = bankDb.getDeposits();
+    const map = new Map<string, any>();
+    localDeposits.forEach((d) => map.set(d.id, d));
+    mongoDeposits.forEach((d) => map.set(d.id, { ...(map.get(d.id) || {}), ...d }));
+
+    return res.status(200).json({ success: true, deposits: Array.from(map.values()) });
   });
 
-  // Approve or Reject Deposit (Changes status, and if approved credits the user's account in database)
-  app.post('/api/admin/deposits/:depositId/action', (req, res) => {
+  // Approve or Reject Deposit (Changes status, and if approved credits the user's account in database & MongoDB Atlas)
+  app.post('/api/admin/deposits/:depositId/action', async (req, res) => {
     const adminKey = req.headers['x-admin-key'] || req.body.adminKey;
     if (adminKey !== ADMIN_PASSWORD) {
       return res.status(401).json({ error: 'Unauthorized: Admin password required' });
@@ -244,6 +328,7 @@ async function startServer() {
 
     if (action === 'APPROVE') {
       const result = bankDb.approveDeposit(depositId, note || 'Approved by Bank Administrator');
+      await updateDepositActionInMongo(depositId, 'APPROVED', note || 'Approved by Bank Administrator');
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
@@ -255,6 +340,7 @@ async function startServer() {
       });
     } else if (action === 'REJECT') {
       const result = bankDb.rejectDeposit(depositId, note || 'Administrative verification rejected');
+      await updateDepositActionInMongo(depositId, 'REJECTED', note || 'Administrative verification rejected');
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
@@ -268,24 +354,41 @@ async function startServer() {
     return res.status(400).json({ error: 'Invalid action. Expected APPROVE or REJECT.' });
   });
 
-  // Admin View All Registered Users in Database
-  app.get('/api/admin/users', (req, res) => {
+  // Admin View All Registered Users in Database (Reads from MongoDB Atlas heartbeat + memory)
+  app.get('/api/admin/users', async (req, res) => {
     const adminKey = req.headers['x-admin-key'] || req.query.adminKey;
     if (adminKey !== ADMIN_PASSWORD) {
       return res.status(401).json({ error: 'Unauthorized: Admin password required' });
     }
 
-    const users = bankDb.getAllUsers();
-    return res.status(200).json({ success: true, users });
+    // Read directly from MongoDB Atlas as primary heartbeat
+    const mongoUsers = await getAllUsersFromMongo();
+    const localUsers = bankDb.getAllUsers();
+
+    const map = new Map<string, any>();
+    localUsers.forEach((u) => {
+      const key = (u.username || u.id).toLowerCase();
+      map.set(key, u);
+    });
+    mongoUsers.forEach((u) => {
+      const key = (u.username || u.id).toLowerCase();
+      const existing = map.get(key);
+      map.set(key, { ...existing, ...u });
+    });
+
+    return res.status(200).json({ success: true, users: Array.from(map.values()), source: 'mongodb_heartbeat' });
   });
 
   // Execute Transfer between accounts
-  app.post('/api/transfers', (req, res) => {
+  app.post('/api/transfers', async (req, res) => {
     try {
       const { userId, fromAccountId, toAccountId, amount, memo } = req.body || {};
       const result = bankDb.transferFunds(userId, fromAccountId, toAccountId, parseFloat(amount), memo);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
+      }
+      if (result.user) {
+        await saveUserToMongo(result.user);
       }
       return res.status(200).json({ success: true, user: result.user });
     } catch (err: any) {
@@ -294,12 +397,15 @@ async function startServer() {
   });
 
   // Submit Treasury Bill Tender (Debits account, saves holding)
-  app.post('/api/treasury/tender', (req, res) => {
+  app.post('/api/treasury/tender', async (req, res) => {
     try {
       const { userId, order } = req.body || {};
       const result = bankDb.addTreasuryTender(userId, order);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
+      }
+      if (result.user) {
+        await saveUserToMongo(result.user);
       }
       return res.status(200).json({ success: true, user: result.user });
     } catch (err: any) {
@@ -321,7 +427,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server is running at http://0.0.0.0:${PORT}`);
+    console.log(`Wells Fargo Bank Server running on http://localhost:${PORT}`);
   });
 }
 

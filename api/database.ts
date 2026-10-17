@@ -2,7 +2,13 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import type { BankAccount, UserProfile, CheckDepositRecord, TreasuryTenderOrder, EnrollmentFormData } from '../src/types/banking.ts';
-import { saveUserToMongo, saveDepositToMongo, updateDepositActionInMongo } from './mongo.ts';
+import {
+  saveUserToMongo,
+  saveDepositToMongo,
+  updateDepositActionInMongo,
+  getAllUsersFromMongo,
+  getAllDepositsFromMongo,
+} from './mongo.ts';
 
 export interface StoredDeposit {
   id: string;
@@ -304,6 +310,7 @@ class BankDatabase {
         }
       }
       this.saveDatabase();
+      saveUserToMongo(existing).catch((e) => console.warn('Mongo user sync:', e.message));
       return existing;
     }
 
@@ -604,6 +611,61 @@ class BankDatabase {
 
     this.saveDatabase();
     return { success: true, user };
+  }
+
+  public async syncWithMongo() {
+    try {
+      const mongoUsers = await getAllUsersFromMongo();
+      for (const u of mongoUsers) {
+        if (!u.id && !u._id) continue;
+        const uid = u.id || u._id;
+        const existing = this.data.users[uid] || this.findUserByUsername(u.username);
+        if (existing) {
+          existing.name = u.name || existing.name;
+          existing.email = u.email || existing.email;
+          existing.phone = u.phone || existing.phone;
+          existing.role = u.role || existing.role;
+          if (u.password) existing.password = u.password;
+          existing.profile = { ...(existing.profile || {}), ...(u.profile || {}) };
+          if (u.profile?.accounts && u.profile.accounts.length > 0) {
+            existing.profile.accounts = u.profile.accounts;
+          }
+          if (u.profile?.registrationData) {
+            existing.profile.registrationData = u.profile.registrationData;
+          }
+        } else {
+          this.data.users[uid] = {
+            id: uid,
+            username: u.username,
+            password: u.password || 'password123',
+            name: u.name || u.username,
+            email: u.email,
+            phone: u.phone,
+            createdAt: u.createdAt || new Date().toISOString(),
+            role: u.role || 'customer',
+            profile: u.profile,
+          };
+        }
+      }
+
+      const mongoDeposits = await getAllDepositsFromMongo();
+      for (const d of mongoDeposits) {
+        const did = d.id || d._id;
+        const exists = this.data.deposits.some((x) => x.id === did);
+        if (!exists) {
+          this.data.deposits.unshift(d);
+        } else {
+          const idx = this.data.deposits.findIndex((x) => x.id === did);
+          if (idx !== -1) {
+            this.data.deposits[idx] = { ...this.data.deposits[idx], ...d };
+          }
+        }
+      }
+
+      this.saveDatabase();
+    } catch (err: any) {
+      console.warn('BankDatabase.syncWithMongo warning:', err.message);
+    }
   }
 }
 

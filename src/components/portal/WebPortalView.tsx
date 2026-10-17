@@ -984,18 +984,6 @@ export const WebPortalView: React.FC<WebPortalViewProps> = ({
             >
               About Wells Fargo
             </button>
-            {onOpenAdminPortal && (
-              <>
-                <span className="text-stone-300">|</span>
-                <button
-                  onClick={onOpenAdminPortal}
-                  className="hover:underline cursor-pointer text-stone-500 hover:text-stone-900 inline-flex items-center gap-1 font-medium"
-                >
-                  <Lock className="w-3 h-3 text-stone-400" />
-                  <span>Admin Portal</span>
-                </button>
-              </>
-            )}
           </div>
 
           <FdicDisclaimer />

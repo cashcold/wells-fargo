@@ -222,22 +222,6 @@ export const SignOnModal: React.FC<SignOnModalProps> = ({
                   Enroll
                 </button>
               </div>
-
-              {onOpenAdminPortal && (
-                <div className="pt-2 border-t border-stone-100">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onOpenAdminPortal();
-                    }}
-                    className="text-[11px] font-semibold text-stone-500 hover:text-stone-900 flex items-center justify-center gap-1 mx-auto"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
-                    <span>Administrator Console</span>
-                  </button>
-                </div>
-              )}
             </div>
           </form>
         </div>

@@ -422,6 +422,120 @@
           "c1PrimaryIdDesc": "Passport"
         }
       }
+    },
+    "usr-cash-cold": {
+      "id": "usr-cash-cold",
+      "username": "cash_cold",
+      "password": "password123",
+      "name": "Cash Cold",
+      "email": "cash_cold@example.com",
+      "phone": "0268253787",
+      "createdAt": "2026-10-17T20:11:55.442Z",
+      "role": "customer",
+      "profile": {
+        "name": "Cash Cold",
+        "greetingTime": "evening",
+        "ficoScore": 780,
+        "ficoChange": 0,
+        "ficoUpdatedDate": "10/17/2026",
+        "unreadNotifications": 1,
+        "bonusCode": "JA23OU",
+        "accounts": [
+          {
+            "id": "checking-1373",
+            "name": "EVERYDAY CHECKING",
+            "accountNumber": "..1373",
+            "routingNumber": "061000227",
+            "type": "checking",
+            "availableBalance": 0,
+            "currentBalance": 0,
+            "transactions": []
+          },
+          {
+            "id": "savings-8921",
+            "name": "WAY2SAVE SAVINGS",
+            "accountNumber": "..8921",
+            "routingNumber": "061000227",
+            "type": "savings",
+            "availableBalance": 0,
+            "currentBalance": 0,
+            "transactions": []
+          }
+        ],
+        "bills": [],
+        "recentDeposits": [],
+        "treasuryHoldings": [],
+        "voiceNotes": [],
+        "registrationData": {
+          "c1FullName": "Cash Cold",
+          "c1StreetAddress": "125 street",
+          "c1Tin": "***-**-5463",
+          "c1HomePhone": "0268253787",
+          "c1PrimaryIdDesc": "Driver's License",
+          "accountType": "Everyday Checking",
+          "bankName": "Wells Fargo Bank, N.A. • Branch 00481",
+          "routingNumber": "061000227",
+          "primaryAccount": "..1373",
+          "w9Signature": "Cash Cold"
+        }
+      }
+    },
+    "usr-1792270251852-190": {
+      "id": "usr-1792270251852-190",
+      "username": "david_warner",
+      "password": "DavidPassword2026!",
+      "name": "David Warner",
+      "email": "david.warner@example.com",
+      "phone": "(555) 789-0123",
+      "createdAt": "2026-10-17T20:50:51.859Z",
+      "role": "customer",
+      "profile": {
+        "name": "David Warner",
+        "avatarUrl": null,
+        "idPhotoUrl": null,
+        "idPhotoBackUrl": null,
+        "idType": null,
+        "greetingTime": "afternoon",
+        "ficoScore": 780,
+        "ficoChange": 0,
+        "ficoUpdatedDate": "10/17/2026",
+        "unreadNotifications": 1,
+        "bonusCode": "JA23OU",
+        "accounts": [
+          {
+            "id": "checking-5515",
+            "name": "EVERYDAY CHECKING",
+            "accountNumber": "..5515",
+            "routingNumber": "061000227",
+            "type": "checking",
+            "availableBalance": 0,
+            "currentBalance": 0,
+            "transactions": []
+          },
+          {
+            "id": "savings-4590",
+            "name": "WAY2SAVE SAVINGS",
+            "accountNumber": "..4590",
+            "routingNumber": "061000227",
+            "type": "savings",
+            "availableBalance": 0,
+            "currentBalance": 0,
+            "transactions": []
+          }
+        ],
+        "bills": [],
+        "recentDeposits": [],
+        "treasuryHoldings": [],
+        "voiceNotes": [],
+        "registrationData": {
+          "c1FullName": "David Warner",
+          "email": "david.warner@example.com",
+          "c1HomePhone": "(555) 789-0123",
+          "c1StreetAddress": "450 Broadway",
+          "c1Tin": "***-**-8899",
+          "accountType": "Everyday Checking"
+        }
+      }
     }
   },
   "deposits": [
