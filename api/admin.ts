@@ -3,11 +3,13 @@ import { bankDb } from './database.ts';
 const ADMIN_PASSWORD = 'admin12345@';
 
 export default function handler(req: any, res: any) {
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.replace('Bearer ', '').trim();
-  const queryKey = req.query.key;
+  const adminKey =
+    req.headers['x-admin-key'] ||
+    (req.headers.authorization || '').replace('Bearer ', '').trim() ||
+    req.query.adminKey ||
+    req.query.key;
 
-  if (token !== ADMIN_PASSWORD && queryKey !== ADMIN_PASSWORD) {
+  if (adminKey !== ADMIN_PASSWORD) {
     return res.status(401).json({ error: 'Unauthorized: Admin authentication required' });
   }
 

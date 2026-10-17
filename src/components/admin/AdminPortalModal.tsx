@@ -19,8 +19,11 @@ import {
   ChevronDown,
   ChevronRight,
   Filter,
+  Download,
+  Database,
 } from 'lucide-react';
 import { WfLogo } from '../common/WfLogo';
+import { authService } from '../../services/authService';
 
 interface StoredDeposit {
   id: string;
@@ -75,6 +78,8 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   const [rejectReasonPrompt, setRejectReasonPrompt] = useState<{ id: string } | null>(null);
   const [rejectReason, setRejectReason] = useState('Image unreadable or endorsement missing');
 
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+
   const adminPassword = 'admin12345@';
 
   useEffect(() => {
@@ -97,35 +102,97 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   const fetchAdminData = async () => {
     setIsLoading(true);
     try {
-      // Fetch deposits
-      const depRes = await fetch('/api/admin/deposits', {
-        headers: { 'x-admin-key': adminPassword },
-      });
-      if (depRes.ok) {
-        const depData = await depRes.json();
-        setDeposits(depData.deposits || []);
-      } else {
-        // Fallback to public endpoint
-        const pubRes = await fetch('/api/deposits');
-        if (pubRes.ok) {
-          const pubData = await pubRes.json();
-          setDeposits(pubData.deposits || []);
+      // 1. Fetch deposits
+      try {
+        const depRes = await fetch('/api/admin/deposits', {
+          headers: { 'x-admin-key': adminPassword },
+        });
+        if (depRes.ok) {
+          const depData = await depRes.json();
+          setDeposits(depData.deposits || []);
+        } else {
+          const pubRes = await fetch('/api/deposits');
+          if (pubRes.ok) {
+            const pubData = await pubRes.json();
+            setDeposits(pubData.deposits || []);
+          }
         }
+      } catch (e) {
+        console.warn('Deposits fetch error:', e);
       }
 
-      // Fetch users
-      const usersRes = await fetch('/api/admin/users', {
-        headers: { 'x-admin-key': adminPassword },
-      });
-      if (usersRes.ok) {
-        const usersData = await usersRes.json();
-        setUsers(usersData.users || []);
+      // 2. Fetch server users
+      let serverUsers: StoredUser[] = [];
+      try {
+        const usersRes = await fetch('/api/admin/users', {
+          headers: { 'x-admin-key': adminPassword },
+        });
+        if (usersRes.ok) {
+          const usersData = await usersRes.json();
+          serverUsers = usersData.users || [];
+        } else {
+          const altRes = await fetch(`/api/admin?action=users&key=${encodeURIComponent(adminPassword)}`, {
+            headers: { 'x-admin-key': adminPassword },
+          });
+          if (altRes.ok) {
+            const altData = await altRes.json();
+            serverUsers = altData.users || [];
+          }
+        }
+      } catch (err) {
+        console.warn('Server users fetch error:', err);
       }
+
+      // 3. Fetch client local storage users
+      const localUsers = (authService.getAllUsers() || []) as unknown as StoredUser[];
+
+      // 4. Merge both databases (deduplicating by username)
+      const userMap = new Map<string, StoredUser>();
+      localUsers.forEach((u) => {
+        if (u && u.username) {
+          userMap.set(u.username.toLowerCase(), u);
+        }
+      });
+      serverUsers.forEach((u) => {
+        if (u && u.username) {
+          const key = u.username.toLowerCase();
+          const existing = userMap.get(key);
+          userMap.set(key, { ...existing, ...u });
+        }
+      });
+
+      const mergedUsers = Array.from(userMap.values());
+      setUsers(mergedUsers);
     } catch (err) {
       console.error('Failed to load admin data:', err);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleExportDatabaseJson = () => {
+    const exportUsersObj: Record<string, any> = {};
+    users.forEach((u) => {
+      exportUsersObj[u.id] = u;
+    });
+
+    const exportPayload = {
+      users: exportUsersObj,
+      deposits,
+      version: 1,
+      exportedAt: new Date().toISOString(),
+    };
+
+    const dataUri =
+      'data:application/json;charset=utf-8,' +
+      encodeURIComponent(JSON.stringify(exportPayload, null, 2));
+
+    const exportLink = document.createElement('a');
+    exportLink.setAttribute('href', dataUri);
+    exportLink.setAttribute('download', 'bank_database.json');
+    document.body.appendChild(exportLink);
+    exportLink.click();
+    exportLink.remove();
   };
 
   const handleApproveDeposit = async (deposit: StoredDeposit) => {
@@ -556,19 +623,110 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
               {/* TAB 2: DATABASE REGISTERED USERS & ACCOUNTS */}
               {activeTab === 'users' && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-stone-50 p-4 rounded-xl border border-stone-200">
                     <div>
-                      <h4 className="font-bold text-sm text-stone-900">
-                        Registered User Records in Database
-                      </h4>
-                      <p className="text-xs text-stone-500">
-                        Every user registered has specific details and accounts initialized with $0.00 USD balance.
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-sm text-stone-900">
+                          Registered User Records in Database
+                        </h4>
+                        <span className="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                          {users.length} Registered
+                        </span>
+                      </div>
+                      <p className="text-xs text-stone-500 mt-0.5">
+                        Live unified database (server + local storage). All newly opened accounts appear here automatically.
                       </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleExportDatabaseJson}
+                        className="bg-white hover:bg-stone-100 border border-stone-300 text-stone-800 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                        title="Download bank_database.json for local editor"
+                      >
+                        <Download className="w-3.5 h-3.5 text-stone-600" />
+                        <span>Export JSON</span>
+                      </button>
+
+                      <button
+                        onClick={fetchAdminData}
+                        disabled={isLoading}
+                        className="bg-stone-900 hover:bg-black text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                        <span>Refresh</span>
+                      </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4">
-                    {users.map((usr) => {
+                  {/* Search Bar */}
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Search accounts by customer name, @username, email, or user ID..."
+                      value={userSearchQuery}
+                      onChange={(e) => setUserSearchQuery(e.target.value)}
+                      className="w-full bg-white border border-stone-200 rounded-lg pl-9 pr-3 py-2 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-hidden focus:border-[#d71e28]"
+                    />
+                    {userSearchQuery && (
+                      <button
+                        onClick={() => setUserSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  {/* User List or Empty State */}
+                  {users.filter((u) => {
+                    if (!userSearchQuery.trim()) return true;
+                    const q = userSearchQuery.toLowerCase();
+                    return (
+                      u.name?.toLowerCase().includes(q) ||
+                      u.username?.toLowerCase().includes(q) ||
+                      u.email?.toLowerCase().includes(q) ||
+                      u.id?.toLowerCase().includes(q)
+                    );
+                  }).length === 0 ? (
+                    <div className="bg-white rounded-xl border border-stone-200 p-8 text-center space-y-3">
+                      <div className="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center text-stone-400 mx-auto">
+                        <User className="w-6 h-6" />
+                      </div>
+                      <div className="space-y-1">
+                        <h5 className="font-bold text-sm text-stone-900">
+                          {userSearchQuery ? 'No matching registered accounts found' : 'No user accounts found in database'}
+                        </h5>
+                        <p className="text-xs text-stone-500 max-w-sm mx-auto">
+                          {userSearchQuery
+                            ? `No users matched "${userSearchQuery}". Try clearing your search filter.`
+                            : 'Click "Enroll" on the homepage or sign on modal to register a new customer account.'}
+                        </p>
+                      </div>
+                      {userSearchQuery && (
+                        <button
+                          onClick={() => setUserSearchQuery('')}
+                          className="text-xs font-semibold text-[#d71e28] hover:underline"
+                        >
+                          Clear search query
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                      {users
+                        .filter((u) => {
+                          if (!userSearchQuery.trim()) return true;
+                          const q = userSearchQuery.toLowerCase();
+                          return (
+                            u.name?.toLowerCase().includes(q) ||
+                            u.username?.toLowerCase().includes(q) ||
+                            u.email?.toLowerCase().includes(q) ||
+                            u.id?.toLowerCase().includes(q)
+                          );
+                        })
+                        .map((usr) => {
                       const reg = usr.profile?.registrationData;
                       const checkingAcc = usr.profile?.accounts?.find((a: any) => a.type === 'checking');
                       const savingsAcc = usr.profile?.accounts?.find((a: any) => a.type === 'savings');
@@ -741,7 +899,8 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                         </div>
                       );
                     })}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )}
 
