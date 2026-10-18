@@ -200,12 +200,17 @@ class AuthService {
     }
   }
 
+  public findUserById(id: string): StoredUser | undefined {
+    return this.users[id] || Object.values(this.users).find((u) => u.id === id);
+  }
+
   public findUserByUsername(username: string): StoredUser | undefined {
     const clean = username.trim().toLowerCase();
     return Object.values(this.users).find(
       (u) =>
         u.username.toLowerCase() === clean ||
-        (u.email && u.email.toLowerCase() === clean)
+        (u.email && u.email.toLowerCase() === clean) ||
+        u.id === username
     );
   }
 
@@ -444,6 +449,27 @@ class AuthService {
     const user = this.findUserByUsername(username);
     if (!user) return null;
 
+    // Banking KYC compliance: Customer cannot change photo once set after opening account
+    const existingPhoto =
+      user.profile.idPhotoUrl ||
+      user.profile.avatarUrl ||
+      user.profile.registrationData?.idPhotoUrl;
+
+    const newPhoto =
+      updatedProfile.idPhotoUrl ||
+      updatedProfile.avatarUrl ||
+      updatedProfile.registrationData?.idPhotoUrl;
+
+    // If an existing photo is already registered and a different photo is provided by non-admin
+    if (existingPhoto && newPhoto && newPhoto !== existingPhoto) {
+      console.warn('Customer photo is locked per KYC regulations. Retaining verified photo on file.');
+      delete updatedProfile.idPhotoUrl;
+      delete updatedProfile.avatarUrl;
+      if (updatedProfile.registrationData) {
+        updatedProfile.registrationData.idPhotoUrl = existingPhoto;
+      }
+    }
+
     user.profile = {
       ...user.profile,
       ...updatedProfile,
@@ -479,6 +505,40 @@ class AuthService {
     }
 
     return user.profile;
+  }
+
+  /**
+   * Dedicated Admin Override to update customer identification photo
+   */
+  public async adminUpdateUserPhoto(
+    userIdOrUsername: string,
+    photoUrl: string,
+    adminKey = ADMIN_PASSWORD
+  ): Promise<boolean> {
+    const user = this.findUserById(userIdOrUsername) || this.findUserByUsername(userIdOrUsername);
+    if (!user) return false;
+
+    user.profile.idPhotoUrl = photoUrl;
+    user.profile.avatarUrl = photoUrl;
+    if (user.profile.registrationData) {
+      user.profile.registrationData.idPhotoUrl = photoUrl;
+      user.profile.registrationData.selfieUrl = photoUrl;
+    }
+    this.save();
+
+    try {
+      const res = await fetch(`/api/admin/users/${encodeURIComponent(user.id)}/photo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': adminKey,
+        },
+        body: JSON.stringify({ photoUrl, adminKey }),
+      });
+      return res.ok;
+    } catch {
+      return true;
+    }
   }
 
   public recordOrUpdateUser(

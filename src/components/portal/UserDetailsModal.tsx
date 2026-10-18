@@ -64,9 +64,19 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   const [uploadSuccessMessage, setUploadSuccessMessage] = useState<string>('');
   const [isUpdatingId, setIsUpdatingId] = useState(false);
   const [pendingCropImage, setPendingCropImage] = useState<string | null>(null);
+  const [showPhotoLockNotice, setShowPhotoLockNotice] = useState(false);
 
   const handleUploadIdImage = async (dataUrl: string) => {
     if (!dataUrl) return;
+    const hasExistingPhoto = Boolean(
+      userData.idPhotoUrl ||
+      userData.avatarUrl ||
+      userData.registrationData?.idPhotoUrl
+    );
+    if (hasExistingPhoto) {
+      setShowPhotoLockNotice(true);
+      return;
+    }
     setIsUpdatingId(true);
     try {
       const existingReg = userData.registrationData || {
@@ -305,11 +315,11 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                 size="md"
                 shape="rounded"
                 showVerifiedBadge={true}
+                isLocked={Boolean(userData.avatarUrl || userData.idPhotoUrl || reg.idPhotoUrl)}
                 onEditClick={() => {
                   const currentImg = userData.avatarUrl || userData.idPhotoUrl || reg.idPhotoUrl;
                   if (currentImg) {
-                    setEnlargedImageUrl(currentImg);
-                    setShowEnlargeModal(true);
+                    setShowPhotoLockNotice(true);
                   } else {
                     fileInputRef.current?.click();
                   }
@@ -319,7 +329,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
               {/* Verified Lock Badge: Only Admin can update */}
               {(userData.avatarUrl || userData.idPhotoUrl || reg.idPhotoUrl) ? (
                 <div
-                  className="absolute -top-1 -right-1 bg-stone-900 border border-amber-400/80 p-1 rounded-full shadow-md z-20 text-amber-400"
+                  onClick={() => setShowPhotoLockNotice(true)}
+                  className="absolute -top-1 -right-1 bg-stone-900 border border-amber-400/80 p-1 rounded-full shadow-md z-20 text-amber-400 cursor-pointer"
                   title="Official Record Locked • Modification Restricted to Bank Administrator"
                 >
                   <Lock className="w-3 h-3 text-amber-400" />
@@ -714,23 +725,21 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
 
                         <button
                           type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={isUpdatingId}
-                          className="bg-[#d71e28] hover:bg-[#b81620] text-white px-3 py-1.5 rounded-full font-semibold text-xs inline-flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
+                          onClick={() => setShowPhotoLockNotice(true)}
+                          className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1.5 rounded-full font-semibold text-xs inline-flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
+                          title="Record permanently locked under Federal KYC regulations. Changes restricted to Bank Administrator."
                         >
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Replace ID Photo</span>
+                          <Lock className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Photo ID Locked (Admin Only)</span>
                         </button>
+                      </div>
 
-                        <button
-                          type="button"
-                          onClick={() => cameraInputRef.current?.click()}
-                          disabled={isUpdatingId}
-                          className="bg-stone-800 hover:bg-stone-900 text-white px-3 py-1.5 rounded-full font-semibold text-xs inline-flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
-                        >
-                          <Camera className="w-3.5 h-3.5 text-[#ffcc00]" />
-                          <span>Camera</span>
-                        </button>
+                      {/* Official KYC Notice */}
+                      <div className="mt-3 bg-amber-50/80 border border-amber-200 rounded-lg p-2.5 text-[11px] text-amber-900 flex items-start gap-2">
+                        <Lock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <p className="leading-relaxed">
+                          <strong>Permanent KYC Record:</strong> Under Federal banking regulations, once an identification photo is submitted and the account is established, it becomes a permanent legal record. Account holders cannot modify identity photos. If you need to update your photo due to legal name or appearance changes, an authorized <strong>Bank Administrator</strong> must verify and process the change.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -964,6 +973,53 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
           }}
           onCancel={() => setPendingCropImage(null)}
         />
+      )}
+
+      {/* Official Photo ID Lock Notice Modal */}
+      {showPhotoLockNotice && (
+        <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-stone-300 animate-in zoom-in-95">
+            <div className="bg-[#d71e28] text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-[#ffcc00]" />
+                <h4 className="font-bold text-sm tracking-tight">Verified ID Photo Record Locked</h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPhotoLockNotice(false)}
+                className="p-1 rounded-full hover:bg-black/20 text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-stone-700">
+              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-amber-900 text-xs">
+                <Lock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <p className="leading-relaxed">
+                  <strong>Banking KYC & CIP Compliance:</strong> Under Federal banking regulations (USA PATRIOT Act Section 326 Customer Identification Program), once an account is opened and an identification photo is submitted, the record is permanently locked as an official legal record. Account holders cannot modify or replace identity photos.
+                </p>
+              </div>
+
+              <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 text-xs space-y-1 text-stone-600">
+                <span className="font-semibold text-stone-800 block">Need to update your photo record?</span>
+                <p className="leading-relaxed">
+                  If your legal name, appearance, or government credentials have changed, an authorized <strong>Wells Fargo Bank Administrator</strong> can review and update your official photo in the database via the Admin Portal.
+                </p>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-stone-200">
+                <button
+                  type="button"
+                  onClick={() => setShowPhotoLockNotice(false)}
+                  className="px-5 py-2 bg-[#d71e28] hover:bg-[#b81620] text-white rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                >
+                  Understood
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

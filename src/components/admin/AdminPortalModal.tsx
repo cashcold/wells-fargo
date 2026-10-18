@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   ShieldCheck,
@@ -21,9 +21,13 @@ import {
   Filter,
   Download,
   Database,
+  Upload,
+  Camera,
 } from 'lucide-react';
 import { WfLogo } from '../common/WfLogo';
 import { authService } from '../../services/authService';
+import { compressImageFile } from '../../utils/imageUtils';
+import { ImageCropPositionModal } from '../common/ImageCropPositionModal';
 
 interface StoredDeposit {
   id: string;
@@ -79,8 +83,88 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   const [rejectReason, setRejectReason] = useState('Image unreadable or endorsement missing');
 
   const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [photoCropTargetUser, setPhotoCropTargetUser] = useState<StoredUser | null>(null);
+  const [adminPendingPhotoSrc, setAdminPendingPhotoSrc] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const adminPhotoFileInputRef = useRef<HTMLInputElement>(null);
 
   const adminPassword = 'admin12345@';
+
+  const triggerAdminPhotoChange = (user: StoredUser) => {
+    setPhotoCropTargetUser(user);
+    adminPhotoFileInputRef.current?.click();
+  };
+
+  const handleAdminPhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !photoCropTargetUser) return;
+    try {
+      const dataUrl = await compressImageFile(file);
+      setAdminPendingPhotoSrc(dataUrl);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        setAdminPendingPhotoSrc(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
+
+  const handleAdminCropComplete = async (croppedDataUrl: string) => {
+    if (!photoCropTargetUser) return;
+    setIsUploadingPhoto(true);
+    try {
+      await authService.adminUpdateUserPhoto(photoCropTargetUser.id, croppedDataUrl, adminPassword);
+
+      // Update local users array
+      setUsers((prev) =>
+        prev.map((u) => {
+          if (u.id === photoCropTargetUser.id) {
+            const updatedProfile = {
+              ...(u.profile || {}),
+              avatarUrl: croppedDataUrl,
+              idPhotoUrl: croppedDataUrl,
+              registrationData: {
+                ...(u.profile?.registrationData || {}),
+                idPhotoUrl: croppedDataUrl,
+              },
+            };
+            return { ...u, profile: updatedProfile };
+          }
+          return u;
+        })
+      );
+
+      // Update selectedUserDetail if open
+      if (selectedUserDetail && selectedUserDetail.id === photoCropTargetUser.id) {
+        setSelectedUserDetail({
+          ...selectedUserDetail,
+          profile: {
+            ...(selectedUserDetail.profile || {}),
+            avatarUrl: croppedDataUrl,
+            idPhotoUrl: croppedDataUrl,
+            registrationData: {
+              ...(selectedUserDetail.profile?.registrationData || {}),
+              idPhotoUrl: croppedDataUrl,
+            },
+          },
+        });
+      }
+
+      setActionSuccessMessage(
+        `Official customer photo for "${photoCropTargetUser.name}" successfully updated by Administrator.`
+      );
+      setTimeout(() => setActionSuccessMessage(null), 5000);
+    } catch (err: any) {
+      console.error('Failed to update photo by admin:', err);
+    } finally {
+      setIsUploadingPhoto(false);
+      setAdminPendingPhotoSrc(null);
+      setPhotoCropTargetUser(null);
+    }
+  };
 
   useEffect(() => {
     if (isOpen && isAuthenticated) {
@@ -768,13 +852,25 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                               </div>
                             </div>
 
-                            <button
-                              onClick={() => setSelectedUserDetail(selectedUserDetail?.id === usr.id ? null : usr)}
-                              className="self-start sm:self-center border border-stone-300 hover:bg-stone-50 text-stone-800 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-                            >
-                              <Eye className="w-3.5 h-3.5 text-[#d71e28]" />
-                              <span>{selectedUserDetail?.id === usr.id ? 'Hide Full Info' : 'Inspect Specific Details'}</span>
-                            </button>
+                            <div className="flex items-center gap-2 self-start sm:self-center">
+                              <button
+                                type="button"
+                                onClick={() => triggerAdminPhotoChange(usr)}
+                                className="border border-stone-300 hover:bg-stone-50 text-stone-800 px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                title="Update customer photo as Administrator"
+                              >
+                                <Camera className="w-3.5 h-3.5 text-[#ffcc00]" />
+                                <span>Update Photo</span>
+                              </button>
+
+                              <button
+                                onClick={() => setSelectedUserDetail(selectedUserDetail?.id === usr.id ? null : usr)}
+                                className="border border-stone-300 hover:bg-stone-50 text-stone-800 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-[#d71e28]" />
+                                <span>{selectedUserDetail?.id === usr.id ? 'Hide Full Info' : 'Inspect Specific Details'}</span>
+                              </button>
+                            </div>
                           </div>
 
                           {/* Accounts & Balances Summary */}
@@ -871,32 +967,69 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                                   </span>
                                 </div>
 
-                                {(usr.profile?.idPhotoUrl || reg?.idPhotoUrl) && (
-                                  <div className="sm:col-span-3 pt-3 border-t border-amber-200">
-                                    <span className="text-[10px] text-stone-600 font-bold uppercase tracking-wider block mb-2 flex items-center gap-1.5">
+                                <div className="sm:col-span-3 pt-3 border-t border-amber-200">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-[10px] text-stone-600 font-bold uppercase tracking-wider flex items-center gap-1.5">
                                       <ShieldCheck className="w-3.5 h-3.5 text-[#d71e28]" />
                                       <span>Attached Government Photo ID Image</span>
                                     </span>
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white p-3 rounded-lg border border-amber-200">
-                                      <img
-                                        src={usr.profile?.idPhotoUrl || reg?.idPhotoUrl}
-                                        alt="Uploaded Government ID"
-                                        className="h-28 w-44 object-contain rounded border border-stone-300 bg-stone-50 shadow-2xs p-1 shrink-0"
-                                      />
-                                      <div className="text-xs space-y-1">
-                                        <div className="font-bold text-stone-900">
-                                          {reg?.c1PrimaryIdDesc || "Driver's License"}
-                                        </div>
-                                        <div className="text-stone-500 text-[11px]">
-                                          Issuing State/Jurisdiction: {reg?.c1PrimaryIdState || 'USA'}
-                                        </div>
-                                        <div className="text-emerald-700 font-semibold text-[11px] flex items-center gap-1 pt-1">
-                                          <CheckCircle2 className="w-3.5 h-3.5" /> CIP ID Document Stored in Database
+                                    <span className="text-amber-800 text-[10px] font-semibold bg-amber-100/80 px-2 py-0.5 rounded flex items-center gap-1">
+                                      <Lock className="w-3 h-3 text-amber-600" />
+                                      <span>Customer Modification Locked (Admin Only)</span>
+                                    </span>
+                                  </div>
+
+                                  {(usr.profile?.idPhotoUrl || reg?.idPhotoUrl) ? (
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-3.5 rounded-lg border border-amber-200 shadow-2xs">
+                                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                        <img
+                                          src={usr.profile?.idPhotoUrl || reg?.idPhotoUrl}
+                                          alt="Uploaded Government ID"
+                                          className="h-28 w-44 object-contain rounded border border-stone-300 bg-stone-50 shadow-2xs p-1 shrink-0"
+                                        />
+                                        <div className="text-xs space-y-1">
+                                          <div className="font-bold text-stone-900 text-sm">
+                                            {reg?.c1PrimaryIdDesc || "Driver's License"}
+                                          </div>
+                                          <div className="text-stone-500 text-[11px]">
+                                            Issuing State/Jurisdiction: {reg?.c1PrimaryIdState || 'USA'}
+                                          </div>
+                                          <div className="text-emerald-700 font-semibold text-[11px] flex items-center gap-1 pt-1">
+                                            <CheckCircle2 className="w-3.5 h-3.5" /> CIP ID Document Stored in Database
+                                          </div>
+                                          <p className="text-[10px] text-stone-500 max-w-sm pt-0.5">
+                                            Account holder is legally restricted from replacing this photo. Only an authorized Bank Administrator can update this official image.
+                                          </p>
                                         </div>
                                       </div>
+
+                                      <div className="shrink-0 flex flex-col gap-1.5 w-full sm:w-auto">
+                                        <button
+                                          type="button"
+                                          onClick={() => triggerAdminPhotoChange(usr)}
+                                          disabled={isUploadingPhoto}
+                                          className="bg-[#d71e28] hover:bg-[#b81620] text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                        >
+                                          <Upload className="w-3.5 h-3.5" />
+                                          <span>Replace Photo (Admin Override)</span>
+                                        </button>
+                                      </div>
                                     </div>
-                                  </div>
-                                )}
+                                  ) : (
+                                    <div className="bg-white p-4 rounded-lg border border-dashed border-amber-300 text-center space-y-2">
+                                      <p className="text-xs text-stone-500">No customer ID photo has been uploaded yet for this record.</p>
+                                      <button
+                                        type="button"
+                                        onClick={() => triggerAdminPhotoChange(usr)}
+                                        disabled={isUploadingPhoto}
+                                        className="bg-[#d71e28] hover:bg-[#b81620] text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-xs inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                      >
+                                        <Upload className="w-3.5 h-3.5" />
+                                        <span>Upload Customer Photo (Admin Override)</span>
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           )}
@@ -979,7 +1112,30 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
           </div>
         )}
 
+        {/* Hidden file input for Admin Photo Override */}
+        <input
+          ref={adminPhotoFileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAdminPhotoFileChange}
+        />
       </div>
+
+      {/* Interactive Face & Image Positioner Modal for Admin */}
+      {adminPendingPhotoSrc && (
+        <ImageCropPositionModal
+          isOpen={Boolean(adminPendingPhotoSrc)}
+          imageSrc={adminPendingPhotoSrc}
+          cropShape="circle"
+          title={`Admin Override: Position Face for ${photoCropTargetUser?.name || 'Customer'}`}
+          onCropComplete={handleAdminCropComplete}
+          onCancel={() => {
+            setAdminPendingPhotoSrc(null);
+            setPhotoCropTargetUser(null);
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -7,6 +7,7 @@ interface UserProfileAvatarProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   shape?: 'rounded' | 'circle';
   showVerifiedBadge?: boolean;
+  isLocked?: boolean;
   onEditClick?: () => void;
   className?: string;
 }
@@ -17,6 +18,7 @@ export const UserProfileAvatar: React.FC<UserProfileAvatarProps> = ({
   size = 'md',
   shape = 'rounded',
   showVerifiedBadge = true,
+  isLocked = false,
   onEditClick,
   className = '',
 }) => {
@@ -55,7 +57,13 @@ export const UserProfileAvatar: React.FC<UserProfileAvatarProps> = ({
         className={`relative ${sizeClasses} ${radiusClass} overflow-hidden bg-gradient-to-br from-stone-850 to-stone-950 ring-2 ring-[#ffcc00] ring-offset-2 ring-offset-stone-900 shadow-md shadow-black/40 transition-all duration-200 group ${
           onEditClick ? 'cursor-pointer hover:ring-[#ffd700] hover:scale-[1.03] active:scale-[0.98]' : ''
         }`}
-        title={onEditClick ? 'Click to adjust face position or change photo' : `${name} - Verified Profile`}
+        title={
+          isLocked
+            ? 'Official Customer Photo ID Locked • Changes restricted to Bank Administrator'
+            : onEditClick
+            ? 'Click to position or adjust profile photo'
+            : `${name} - Verified Profile`
+        }
       >
         {hasValidImage ? (
           <img
@@ -75,12 +83,35 @@ export const UserProfileAvatar: React.FC<UserProfileAvatarProps> = ({
           </div>
         )}
 
-        {/* Hover Camera Overlay if editable */}
+        {/* Hover Overlay */}
         {onEditClick && (
-          <div className="absolute inset-0 bg-black/55 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">
-            <Camera className="w-4 h-4 text-amber-300" />
-            {size !== 'sm' && (
-              <span className="text-[8px] font-semibold text-white/90 mt-0.5">Adjust</span>
+          <div className="absolute inset-0 bg-black/65 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white p-1 text-center">
+            {isLocked ? (
+              <>
+                <svg
+                  className="w-4 h-4 text-[#ffcc00] mb-0.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                {size !== 'sm' && (
+                  <span className="text-[8px] font-bold uppercase tracking-wider text-amber-300 leading-tight">
+                    Locked
+                  </span>
+                )}
+                <span className="text-[7px] text-stone-200 hidden sm:inline">Admin Only</span>
+              </>
+            ) : (
+              <>
+                <Camera className="w-4 h-4 text-amber-300" />
+                {size !== 'sm' && (
+                  <span className="text-[8px] font-semibold text-white/90 mt-0.5">Adjust</span>
+                )}
+              </>
             )}
           </div>
         )}
@@ -93,6 +124,19 @@ export const UserProfileAvatar: React.FC<UserProfileAvatarProps> = ({
           title="Verified Identity"
         >
           <CheckCircle2 className="w-full h-full text-white p-0.5" />
+        </div>
+      )}
+
+      {/* Persistent Mini Lock Badge when photo is locked */}
+      {isLocked && hasValidImage && (
+        <div
+          className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-stone-950 border border-amber-400 text-amber-300 flex items-center justify-center shadow-md z-20 pointer-events-none"
+          title="Official Record Locked (Admin Only)"
+        >
+          <svg className="w-2.5 h-2.5 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
         </div>
       )}
     </div>

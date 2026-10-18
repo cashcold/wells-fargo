@@ -1,3 +1,4 @@
+import path from 'path';
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
@@ -37,7 +38,13 @@ async function startServer() {
 
   // Non-blocking MongoDB connection heartbeat check
   getMongoDb()
-    .then(() => console.log('🟢 MongoDB Atlas Heartbeat: Connected to "WellsFargo" database.'))
+    .then((db) => {
+      if (db) {
+        console.log('🟢 MongoDB Atlas: Connected to "WellsFargo" database.');
+      } else {
+        console.log('ℹ️ Local Banking Store active (MongoDB Atlas optional).');
+      }
+    })
     .catch((err) => console.warn('⚠️ MongoDB Atlas warning:', err.message));
 
   // Mount existing API endpoints
@@ -468,7 +475,7 @@ async function startServer() {
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static('dist'));
     app.get('*', (_req, res) => {
-      res.sendFile('index.html', { root: 'dist' });
+      res.sendFile(path.resolve(process.cwd(), 'dist/index.html'));
     });
   } else {
     const vite = await createViteServer({

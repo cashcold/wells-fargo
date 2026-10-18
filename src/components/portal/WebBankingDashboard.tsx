@@ -110,6 +110,20 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
   const handleAvatarFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const hasExistingPhoto = Boolean(
+      userData.avatarUrl ||
+      userData.idPhotoUrl ||
+      userData.registrationData?.idPhotoUrl ||
+      userData.registrationData?.selfieUrl
+    );
+
+    if (hasExistingPhoto) {
+      setShowPhotoLockNotice(true);
+      e.target.value = '';
+      return;
+    }
+
     try {
       const dataUrl = await compressImageFile(file);
       setPhotoCropSrc(dataUrl);
@@ -125,6 +139,19 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
   };
 
   const handleAvatarCropComplete = async (croppedDataUrl: string) => {
+    const hasExistingPhoto = Boolean(
+      userData.avatarUrl ||
+      userData.idPhotoUrl ||
+      userData.registrationData?.idPhotoUrl ||
+      userData.registrationData?.selfieUrl
+    );
+
+    if (hasExistingPhoto) {
+      setShowPhotoLockNotice(true);
+      setPhotoCropSrc(null);
+      return;
+    }
+
     const updatedProfile: UserProfile = {
       ...userData,
       idPhotoUrl: croppedDataUrl,
@@ -893,6 +920,7 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                         size="lg"
                         shape="rounded"
                         showVerifiedBadge={true}
+                        isLocked={Boolean(userImg)}
                         onEditClick={() => setShowPhotoLockNotice(true)}
                       />
 
@@ -1891,7 +1919,8 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                         onClick={() => setIsUserDetailsOpen(true)}
                         className="text-xs text-[#d71e28] font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
                       >
-                        <span>View & Update ID Details &gt;</span>
+                        <Lock className="w-3 h-3 text-amber-600" />
+                        <span>View Official ID Record (Locked) &gt;</span>
                       </button>
                     </div>
                   </div>
@@ -2031,6 +2060,7 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
           onCropComplete={handleAvatarCropComplete}
           onCancel={() => setPhotoCropSrc(null)}
         />
+      )}
       {/* Official Photo ID Lock Notice Modal */}
       {showPhotoLockNotice && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">

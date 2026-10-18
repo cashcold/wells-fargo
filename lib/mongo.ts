@@ -1,54 +1,64 @@
 import { MongoClient, Db, Collection } from 'mongodb';
 
-export const MONGODB_URI =
-  process.env.MONGODB_URI ||
-  'mongodb+srv://auragiftmarket:admin12345@auragiftmarket.g4bvnod.mongodb.net/WellsFargo?appName=auragiftmarket';
+export const MONGODB_URI = process.env.MONGODB_URI || '';
 
 export const DB_NAME = 'WellsFargo';
 
 let cachedClient: MongoClient | null = null;
 let cachedDb: Db | null = null;
+let mongoConnectionFailed = false;
 
 /**
  * Returns a connected MongoClient instance, reusing existing connections across serverless runs.
  */
-export async function getMongoClient(): Promise<MongoClient> {
+export async function getMongoClient(): Promise<MongoClient | null> {
+  if (!MONGODB_URI || mongoConnectionFailed) {
+    return null;
+  }
+
   if (cachedClient) {
     return cachedClient;
   }
 
-  const client = new MongoClient(MONGODB_URI, {
-    maxPoolSize: 10,
-    serverSelectionTimeoutMS: 5000,
-    connectTimeoutMS: 10000,
-  });
+  try {
+    const client = new MongoClient(MONGODB_URI, {
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 2000,
+      connectTimeoutMS: 2000,
+    });
 
-  await client.connect();
-  cachedClient = client;
-  return client;
+    await client.connect();
+    cachedClient = client;
+    return client;
+  } catch (err: any) {
+    mongoConnectionFailed = true;
+    console.warn('[AI Studio] MongoDB not connected or direct TCP blocked — using local store:', err?.message);
+    return null;
+  }
 }
 
 /**
  * Returns the WellsFargo Db instance.
  */
-export async function getMongoDb(): Promise<Db> {
+export async function getMongoDb(): Promise<Db | null> {
   if (cachedDb) {
     return cachedDb;
   }
   const client = await getMongoClient();
+  if (!client) return null;
   const db = client.db(DB_NAME);
   cachedDb = db;
   return db;
 }
 
-export async function getUsersCollection(): Promise<Collection<any>> {
+export async function getUsersCollection(): Promise<Collection<any> | null> {
   const db = await getMongoDb();
-  return db.collection('users');
+  return db ? db.collection('users') : null;
 }
 
-export async function getDepositsCollection(): Promise<Collection<any>> {
+export async function getDepositsCollection(): Promise<Collection<any> | null> {
   const db = await getMongoDb();
-  return db.collection('deposits');
+  return db ? db.collection('deposits') : null;
 }
 
 /**
@@ -57,6 +67,7 @@ export async function getDepositsCollection(): Promise<Collection<any>> {
 export async function saveUserToMongo(user: any): Promise<boolean> {
   try {
     const col = await getUsersCollection();
+    if (!col) return false;
     const cleanUsername = (user.username || '').trim().toLowerCase();
     const existing = await col.findOne({
       $or: [
@@ -101,6 +112,7 @@ export async function saveUserToMongo(user: any): Promise<boolean> {
 export async function getUserFromMongo(identifier: string): Promise<any | null> {
   try {
     const col = await getUsersCollection();
+    if (!col) return null;
     const clean = (identifier || '').trim();
     if (!clean) return null;
     const escaped = clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -129,6 +141,7 @@ export async function getUserFromMongo(identifier: string): Promise<any | null> 
 export async function getAllUsersFromMongo(): Promise<any[]> {
   try {
     const col = await getUsersCollection();
+    if (!col) return [];
     const docs = await col.find({}).sort({ updatedAt: -1, createdAt: -1 }).toArray();
     return docs.map((d) => ({
       id: d.id || d._id,
@@ -154,6 +167,7 @@ export async function getAllUsersFromMongo(): Promise<any[]> {
 export async function saveDepositToMongo(deposit: any): Promise<boolean> {
   try {
     const col = await getDepositsCollection();
+    if (!col) return false;
     const doc = {
       _id: deposit.id,
       id: deposit.id,
@@ -188,6 +202,7 @@ export async function saveDepositToMongo(deposit: any): Promise<boolean> {
 export async function getAllDepositsFromMongo(): Promise<any[]> {
   try {
     const col = await getDepositsCollection();
+    if (!col) return [];
     const docs = await col.find({}).sort({ createdAt: -1 }).toArray();
     return docs.map((d) => ({
       id: d.id || d._id,
@@ -223,6 +238,7 @@ export async function updateDepositActionInMongo(
 ): Promise<boolean> {
   try {
     const depositsCol = await getDepositsCollection();
+    if (!depositsCol) return false;
     const deposit = await depositsCol.findOne({ $or: [{ _id: depositId }, { id: depositId }] });
     if (!deposit) return false;
 
@@ -242,35 +258,37 @@ export async function updateDepositActionInMongo(
     // If approved, update user's account balance in MongoDB
     if (status === 'APPROVED' && deposit.userId) {
       const usersCol = await getUsersCollection();
-      const user = await usersCol.findOne({ $or: [{ _id: deposit.userId }, { id: deposit.userId }] });
-      if (user && user.profile && Array.isArray(user.profile.accounts)) {
-        const creditAmount = Number(deposit.amount) || 0;
-        const updatedAccounts = user.profile.accounts.map((acc: any) => {
-          if (acc.id === deposit.targetAccountId) {
-            const currentBal = Number(acc.availableBalance) || 0;
-            const newBal = currentBal + creditAmount;
-            const tx = {
-              id: `tx-dep-appr-${Date.now()}`,
-              date: new Date().toLocaleDateString('en-US'),
-              description: `MOBILE CHECK DEPOSIT APPROVED - CONF #${deposit.confirmationNumber}`,
-              amount: creditAmount,
-              type: 'credit',
-              category: 'Income',
-            };
-            return {
-              ...acc,
-              availableBalance: newBal,
-              currentBalance: newBal,
-              transactions: [tx, ...(acc.transactions || [])],
-            };
-          }
-          return acc;
-        });
+      if (usersCol) {
+        const user = await usersCol.findOne({ $or: [{ _id: deposit.userId }, { id: deposit.userId }] });
+        if (user && user.profile && Array.isArray(user.profile.accounts)) {
+          const creditAmount = Number(deposit.amount) || 0;
+          const updatedAccounts = user.profile.accounts.map((acc: any) => {
+            if (acc.id === deposit.targetAccountId) {
+              const currentBal = Number(acc.availableBalance) || 0;
+              const newBal = currentBal + creditAmount;
+              const tx = {
+                id: `tx-dep-appr-${Date.now()}`,
+                date: new Date().toLocaleDateString('en-US'),
+                description: `MOBILE CHECK DEPOSIT APPROVED - CONF #${deposit.confirmationNumber}`,
+                amount: creditAmount,
+                type: 'credit',
+                category: 'Income',
+              };
+              return {
+                ...acc,
+                availableBalance: newBal,
+                currentBalance: newBal,
+                transactions: [tx, ...(acc.transactions || [])],
+              };
+            }
+            return acc;
+          });
 
-        await usersCol.updateOne(
-          { _id: user._id },
-          { $set: { 'profile.accounts': updatedAccounts, updatedAt: new Date().toISOString() } }
-        );
+          await usersCol.updateOne(
+            { _id: user._id },
+            { $set: { 'profile.accounts': updatedAccounts, updatedAt: new Date().toISOString() } }
+          );
+        }
       }
     }
 
@@ -287,6 +305,7 @@ export async function updateDepositActionInMongo(
 export async function seedInitialUsersToMongo(seedUsers: any[]): Promise<void> {
   try {
     const col = await getUsersCollection();
+    if (!col) return;
     for (const u of seedUsers) {
       await col.updateOne(
         { $or: [{ _id: u.id }, { username: u.username }] },
