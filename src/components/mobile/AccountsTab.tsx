@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, PlusCircle, CreditCard, Landmark, PiggyBank, Home, Star, TrendingUp, Sparkles, User } from 'lucide-react';
+import { ChevronRight, PlusCircle, CreditCard, Landmark, PiggyBank, Home, Star, TrendingUp, Sparkles, User, CheckCircle2 } from 'lucide-react';
 import { BankAccount, UserProfile } from '../../types/banking';
 import { useGreeting } from '../../utils/greeting';
 
@@ -55,8 +55,57 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({
         </button>
       </div>
 
+      {/* Welcome & Accounts Summary Banner with User Image ID */}
+      {(() => {
+        const primaryChecking = userData.accounts?.find((a) => a.type === 'checking') || userData.accounts?.[0];
+        const userImg = userData.avatarUrl || userData.idPhotoUrl || userData.registrationData?.idPhotoUrl || userData.registrationData?.selfieUrl;
+
+        return (
+          <div className="bg-gradient-to-r from-red-950 via-stone-900 to-amber-950 text-white rounded-2xl p-4 shadow-xs border border-stone-800 flex items-center gap-3.5">
+            {/* User Image ID with border radius */}
+            <div className="relative shrink-0">
+              {userImg ? (
+                <img
+                  src={userImg}
+                  alt={userData.name}
+                  className="w-14 h-14 rounded-2xl object-cover border-2 border-[#ffcc00] shadow-sm bg-stone-900"
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-2xl bg-stone-800 border-2 border-[#ffcc00] flex flex-col items-center justify-center text-amber-300 shadow-sm">
+                  <User className="w-6 h-6 text-amber-400" />
+                  <span className="text-[8px] font-bold uppercase tracking-wider mt-0.5">ID Photo</span>
+                </div>
+              )}
+              <div
+                className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-stone-900 flex items-center justify-center shadow-xs"
+                title="Verified Identity"
+              >
+                <CheckCircle2 className="w-3 h-3 text-white" />
+              </div>
+            </div>
+
+            <div className="space-y-1 min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="bg-[#ffcc00] text-stone-900 font-bold text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Verified Account Holder
+                </span>
+                <span className="text-[10px] text-stone-300 font-mono">
+                  Routing: 061000227 • Everyday Checking {primaryChecking?.accountNumber || '..0987'}
+                </span>
+              </div>
+              <div className="font-serif text-sm font-semibold text-white truncate">
+                {greeting}, {userData.name}!
+              </div>
+              <p className="text-[11px] text-stone-200 leading-snug">
+                Welcome to your Wells Fargo accounts summary. Review your active balances, schedule payments, and manage your daily finances securely.
+              </p>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Account Cards Stack */}
-      <div className="space-y-3 pt-2">
+      <div className="space-y-3 pt-1">
         {userData.accounts.map((account) => {
           const isCredit = account.type === 'credit';
           const isLoan = account.type === 'loan';
