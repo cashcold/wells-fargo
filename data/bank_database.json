@@ -369,8 +369,12 @@
           "email": "frank_ainoo@example.com",
           "c1HomePhone": "(555) 408-7560",
           "c1PrimaryIdDesc": "Driver's License",
-          "accountType": "Everyday Checking"
-        }
+          "accountType": "Everyday Checking",
+          "idPhotoUrl": "https://example.com/admin-verified.jpg",
+          "selfieUrl": "https://example.com/admin-verified.jpg"
+        },
+        "avatarUrl": "https://example.com/admin-verified.jpg",
+        "idPhotoUrl": "https://example.com/admin-verified.jpg"
       }
     },
     "usr-1792234147239-939": {

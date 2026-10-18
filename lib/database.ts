@@ -186,6 +186,60 @@ class BankDatabase {
       },
     };
 
+    const frankId = 'usr-frank-ainoo';
+    initial.users[frankId] = {
+      id: frankId,
+      username: 'frank_ainoo',
+      password: 'password123',
+      name: 'frank Ainoo',
+      email: 'frank_ainoo@example.com',
+      phone: '(555) 408-7560',
+      createdAt: '2026-10-17T02:50:00.000Z',
+      role: 'customer',
+      profile: {
+        name: 'frank Ainoo',
+        greetingTime: 'morning',
+        ficoScore: 780,
+        ficoChange: 0,
+        ficoUpdatedDate: '10/17/2026',
+        unreadNotifications: 1,
+        bonusCode: 'JA23OU',
+        accounts: [
+          {
+            id: 'checking-4086',
+            name: 'EVERYDAY CHECKING',
+            accountNumber: '..4086',
+            routingNumber: '061000227',
+            type: 'checking',
+            availableBalance: 0.00,
+            currentBalance: 0.00,
+            transactions: [],
+          },
+          {
+            id: 'savings-7560',
+            name: 'WAY2SAVE SAVINGS',
+            accountNumber: '..7560',
+            routingNumber: '061000227',
+            type: 'savings',
+            availableBalance: 0.00,
+            currentBalance: 0.00,
+            transactions: [],
+          },
+        ],
+        bills: [],
+        recentDeposits: [],
+        treasuryHoldings: [],
+        voiceNotes: [],
+        registrationData: {
+          c1FullName: 'frank Ainoo',
+          email: 'frank_ainoo@example.com',
+          c1HomePhone: '(555) 408-7560',
+          c1PrimaryIdDesc: "Driver's License",
+          accountType: 'Everyday Checking',
+        } as any,
+      },
+    };
+
     this.saveDatabase(initial);
     return initial;
   }

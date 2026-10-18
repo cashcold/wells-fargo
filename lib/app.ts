@@ -412,7 +412,36 @@ app.get(['/api/user/:userId', '/user/:userId'], async (req, res) => {
 
 app.put(['/api/user/:userId', '/user/:userId'], async (req, res) => {
   const { userId } = req.params;
-  const updated = bankDb.updateUserProfile(userId, req.body.profile || req.body);
+  const profileUpdate = req.body.profile || req.body || {};
+  const adminKey = req.headers['x-admin-key'];
+
+  // Check if user already has an official verified photo
+  let existingUser = bankDb.findUserById(userId) || bankDb.findUserByUsername(userId);
+  if (!existingUser) {
+    try {
+      existingUser = await getUserFromMongo(userId);
+    } catch {}
+  }
+
+  const existingPhoto =
+    existingUser?.profile?.avatarUrl ||
+    existingUser?.profile?.idPhotoUrl ||
+    existingUser?.profile?.registrationData?.idPhotoUrl;
+
+  const newPhoto =
+    profileUpdate.avatarUrl ||
+    profileUpdate.idPhotoUrl ||
+    profileUpdate.registrationData?.idPhotoUrl;
+
+  if (existingPhoto && newPhoto && newPhoto !== existingPhoto && adminKey !== ADMIN_PASSWORD) {
+    return res.status(403).json({
+      success: false,
+      error:
+        'Verified Customer Photo ID is locked for regulatory compliance. Account holders cannot change identity photos after account creation. Only a Bank Administrator can update this record.',
+    });
+  }
+
+  const updated = bankDb.updateUserProfile(userId, profileUpdate);
   if (updated) {
     await saveUserToMongo(updated);
     return res.status(200).json({ success: true, user: updated });
@@ -420,12 +449,63 @@ app.put(['/api/user/:userId', '/user/:userId'], async (req, res) => {
 
   const mongoUser = await getUserFromMongo(userId);
   if (mongoUser) {
-    mongoUser.profile = { ...(mongoUser.profile || {}), ...(req.body.profile || req.body) };
+    mongoUser.profile = { ...(mongoUser.profile || {}), ...profileUpdate };
     await saveUserToMongo(mongoUser);
     return res.status(200).json({ success: true, user: mongoUser });
   }
 
   return res.status(404).json({ error: 'User not found' });
+});
+
+// Admin Override: Update Customer Identification Photo in database
+app.post(['/api/admin/users/:userId/photo', '/admin/users/:userId/photo'], async (req, res) => {
+  const adminKey = req.headers['x-admin-key'] || req.body.adminKey;
+  if (adminKey !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Unauthorized: Admin password required' });
+  }
+
+  const { userId } = req.params;
+  const { photoUrl } = req.body || {};
+  if (!photoUrl) {
+    return res.status(400).json({ error: 'photoUrl is required' });
+  }
+
+  const localUser = bankDb.findUserById(userId) || bankDb.findUserByUsername(userId);
+  let mongoUser = await getUserFromMongo(userId);
+  if (!mongoUser && localUser) {
+    mongoUser = await getUserFromMongo(localUser.username);
+  }
+
+  const targetUser = mongoUser || localUser;
+  if (!targetUser) {
+    return res.status(404).json({ error: 'Customer account not found in database' });
+  }
+
+  const profileUpdate = {
+    avatarUrl: photoUrl,
+    idPhotoUrl: photoUrl,
+    registrationData: {
+      ...(targetUser.profile?.registrationData || {}),
+      idPhotoUrl: photoUrl,
+      selfieUrl: photoUrl,
+    },
+  };
+
+  const updatedLocal = bankDb.updateUserProfile(targetUser.id, profileUpdate);
+  if (mongoUser) {
+    mongoUser.profile = { ...(mongoUser.profile || {}), ...profileUpdate };
+    mongoUser.avatarUrl = photoUrl;
+    mongoUser.idPhotoUrl = photoUrl;
+    await saveUserToMongo(mongoUser);
+  } else if (updatedLocal) {
+    await saveUserToMongo(updatedLocal);
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: 'Customer photo successfully updated by Administrator and persisted to database.',
+    user: mongoUser || updatedLocal,
+  });
 });
 
 // --- DEPOSITS ---
