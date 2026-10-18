@@ -348,7 +348,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                   REF: DSG8921-061000227
                 </span>
               </div>
-              <h2 className="font-serif text-2xl sm:text-3xl font-normal text-white">
+              <h2 className="font-serif text-2xl sm:text-3xl font-normal text-white break-words">
                 {greeting}, {userData.name}!
               </h2>
               <p className="text-xs text-stone-300 mt-1">

@@ -565,8 +565,8 @@
             "accountNumber": "..5776",
             "routingNumber": "061000227",
             "type": "checking",
-            "availableBalance": 525451421,
-            "currentBalance": 525451421,
+            "availableBalance": 54354521,
+            "currentBalance": 54354521,
             "transactions": []
           },
           {
@@ -575,8 +575,8 @@
             "accountNumber": "..4685",
             "routingNumber": "061000227",
             "type": "savings",
-            "availableBalance": 0,
-            "currentBalance": 0,
+            "availableBalance": 33254,
+            "currentBalance": 33254,
             "transactions": []
           }
         ],
