@@ -96,18 +96,24 @@ export async function saveUserToMongo(user: any): Promise<boolean> {
 }
 
 /**
- * Retrieves a user by username from MongoDB Atlas.
+ * Retrieves a user by username, email, name, or id from MongoDB Atlas.
  */
-export async function getUserFromMongo(username: string): Promise<any | null> {
+export async function getUserFromMongo(identifier: string): Promise<any | null> {
   try {
     const col = await getUsersCollection();
-    const clean = username.trim().toLowerCase();
+    const clean = (identifier || '').trim();
+    if (!clean) return null;
+    const escaped = clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const doc = await col.findOne({
       $or: [
-        { username: { $regex: new RegExp(`^${clean}$`, 'i') } },
-        { name: { $regex: new RegExp(`^${clean}$`, 'i') } },
-        { _id: username },
-        { id: username },
+        { id: clean },
+        { _id: clean },
+        { username: clean },
+        { username: { $regex: new RegExp(`^${escaped}$`, 'i') } },
+        { email: clean },
+        { email: { $regex: new RegExp(`^${escaped}$`, 'i') } },
+        { name: clean },
+        { name: { $regex: new RegExp(`^${escaped}$`, 'i') } },
       ],
     });
     return doc;

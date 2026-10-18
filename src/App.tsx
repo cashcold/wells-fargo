@@ -72,31 +72,82 @@ export default function App() {
     };
   }, []);
 
+  // Function to fetch the absolute latest user profile and balances from MongoDB Atlas
+  const fetchUserFromMongo = React.useCallback(async (identifier: string) => {
+    if (!identifier || identifier.trim() === '') return null;
+    try {
+      const res = await fetch(`/api/user/${encodeURIComponent(identifier)}?_ts=${Date.now()}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.user?.profile) {
+          setUserData(data.user.profile);
+          authService.syncUserFromServer(data.user);
+          return data.user.profile;
+        }
+      }
+    } catch (e) {
+      console.warn('Error fetching fresh user from MongoDB:', e);
+    }
+    return null;
+  }, []);
+
+  // Restore session on page refresh and immediately load latest balance from MongoDB Atlas
+  React.useEffect(() => {
+    try {
+      const savedSession = localStorage.getItem('wf_active_session');
+      if (savedSession) {
+        setIsLoggedIn(true);
+        setWebSection('banking');
+        fetchUserFromMongo(savedSession);
+      }
+    } catch {
+      // safe fallback
+    }
+  }, [fetchUserFromMongo]);
+
+  // Live Heartbeat: poll MongoDB every 3 seconds while logged in so any update in MongoDB reflects fast
+  React.useEffect(() => {
+    if (!isLoggedIn) return;
+    const currentSession = localStorage.getItem('wf_active_session') || userData.name;
+    if (!currentSession) return;
+
+    const interval = setInterval(() => {
+      fetchUserFromMongo(currentSession);
+    }, 3000);
+
+    const onFocus = () => {
+      fetchUserFromMongo(currentSession);
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+    };
+  }, [isLoggedIn, userData.name, fetchUserFromMongo]);
+
   const handleLoginSuccess = async (enteredName: string, profileData?: any) => {
     setIsLoggedIn(true);
     setWebSection('banking');
     setJustSignedOff(false);
 
-    if (profileData) {
-      setUserData(profileData);
-      return;
-    }
-
-    const localUser = authService.findUserByUsername(enteredName);
-    if (localUser?.profile) {
-      setUserData(localUser.profile);
-      return;
-    }
-
     try {
-      const res = await fetch(`/api/user/${encodeURIComponent(enteredName)}`);
-      const data = await res.json();
-      if (data.success && data.user?.profile) {
-        setUserData(data.user.profile);
-        return;
+      localStorage.setItem('wf_active_session', enteredName);
+    } catch {}
+
+    // Prioritize fresh MongoDB Atlas data to display updated balances immediately
+    const freshProfile = await fetchUserFromMongo(enteredName);
+    if (!freshProfile) {
+      if (profileData) {
+        setUserData(profileData);
+      } else {
+        const localUser = authService.findUserByUsername(enteredName);
+        if (localUser?.profile) {
+          setUserData(localUser.profile);
+        }
       }
-    } catch {
-      // safe fallback
     }
   };
 
@@ -108,6 +159,9 @@ export default function App() {
     setIsSignatureCardOpen(false);
     setIsAccountOpenFlowActive(false);
     setJustSignedOff(true);
+    try {
+      localStorage.removeItem('wf_active_session');
+    } catch {}
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

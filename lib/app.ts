@@ -289,17 +289,32 @@ app.post(['/api/auth/login', '/auth/login'], async (req, res) => {
       }
     }
 
-    // Lookup user in local memory or MongoDB Atlas
-    let user = bankDb.findUserByUsername(cleanUsername);
-    if (!user) {
-      const mongoUser = await getUserFromMongo(cleanUsername);
-      if (mongoUser) {
-        bankDb.registerUser(mongoUser.username, mongoUser.password, mongoUser.profile?.registrationData);
-        user = bankDb.findUserByUsername(cleanUsername);
-        if (user && mongoUser.profile) {
-          user.profile = mongoUser.profile;
-        }
+    // Always check MongoDB Atlas as the primary heartbeat
+    let user: any = null;
+    const mongoUser = await getUserFromMongo(cleanUsername);
+    if (mongoUser) {
+      const uid = mongoUser.id || mongoUser._id;
+      const local = bankDb.findUserByUsername(mongoUser.username) || bankDb.findUserById(uid);
+      if (local) {
+        local.profile = mongoUser.profile || local.profile;
+        local.name = mongoUser.name || local.name;
+        if (mongoUser.password) local.password = mongoUser.password;
+        user = local;
+      } else {
+        user = bankDb.upsertUser({
+          id: uid,
+          username: mongoUser.username,
+          password: mongoUser.password || 'password123',
+          name: mongoUser.name || mongoUser.username,
+          email: mongoUser.email,
+          phone: mongoUser.phone,
+          createdAt: mongoUser.createdAt || new Date().toISOString(),
+          role: mongoUser.role || 'customer',
+          profile: mongoUser.profile,
+        });
       }
+    } else {
+      user = bankDb.findUserByUsername(cleanUsername);
     }
 
     if (!user) {
@@ -335,15 +350,33 @@ app.post(['/api/auth/login', '/auth/login'], async (req, res) => {
 
 // --- USER PROFILE ---
 app.get(['/api/user/:userId', '/user/:userId'], async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
   const { userId } = req.params;
 
   try {
     const mongoUser = await getUserFromMongo(userId);
     if (mongoUser && mongoUser.profile) {
-      const local = bankDb.findUserByUsername(mongoUser.username) || bankDb.findUserById(mongoUser.id);
+      const uid = mongoUser.id || mongoUser._id;
+      const local = bankDb.findUserByUsername(mongoUser.username) || bankDb.findUserById(uid);
       if (local) {
         local.profile = mongoUser.profile;
         local.name = mongoUser.name || local.name;
+        if (mongoUser.password) local.password = mongoUser.password;
+      } else {
+        bankDb.upsertUser({
+          id: uid,
+          username: mongoUser.username,
+          password: mongoUser.password || 'password123',
+          name: mongoUser.name || mongoUser.username,
+          email: mongoUser.email,
+          phone: mongoUser.phone,
+          createdAt: mongoUser.createdAt || new Date().toISOString(),
+          role: mongoUser.role || 'customer',
+          profile: mongoUser.profile,
+        });
       }
       return res.status(200).json({
         success: true,
