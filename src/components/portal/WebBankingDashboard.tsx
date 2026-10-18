@@ -51,6 +51,10 @@ import { TreasuryBillView } from './TreasuryBillView';
 import { WellsTradeAccountChoiceView } from './WellsTradeAccountChoiceView';
 import { downloadAccountStatementPdf, downloadTransactionReceiptPdf } from '../../utils/transactionPdfGenerator';
 import { TransactionDetailModal } from '../common/TransactionDetailModal';
+import { UserProfileAvatar } from '../common/UserProfileAvatar';
+import { ImageCropPositionModal } from '../common/ImageCropPositionModal';
+import { compressImageFile } from '../../utils/imageUtils';
+import { authService } from '../../services/authService';
 
 interface WebBankingDashboardProps {
   userData: UserProfile;
@@ -98,7 +102,43 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [selectedTxForModal, setSelectedTxForModal] = useState<{ tx: Transaction; account: BankAccount } | null>(null);
   const [statementToast, setStatementToast] = useState(false);
+  const [photoCropSrc, setPhotoCropSrc] = useState<string | null>(null);
+  const [showPhotoLockNotice, setShowPhotoLockNotice] = useState(false);
+  const avatarFileInputRef = React.useRef<HTMLInputElement>(null);
   const greeting = useGreeting();
+
+  const handleAvatarFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const dataUrl = await compressImageFile(file);
+      setPhotoCropSrc(dataUrl);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        setPhotoCropSrc(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
+
+  const handleAvatarCropComplete = async (croppedDataUrl: string) => {
+    const updatedProfile: UserProfile = {
+      ...userData,
+      idPhotoUrl: croppedDataUrl,
+      avatarUrl: croppedDataUrl,
+      registrationData: {
+        ...(userData.registrationData || {}),
+        idPhotoUrl: croppedDataUrl,
+      } as any,
+    };
+    onUpdateUserData(updatedProfile);
+    const username = userData.registrationData?.username || userData.name;
+    await authService.updateUserProfile(username, updatedProfile);
+    setPhotoCropSrc(null);
+  };
 
   // Scroll ref & controls for mobile/desktop navigation tabs
   const navScrollRef = React.useRef<HTMLDivElement>(null);
@@ -846,27 +886,15 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                 return (
                   <div className="bg-gradient-to-r from-red-950 via-stone-900 to-amber-950 text-white rounded-2xl p-5 sm:p-6 shadow-xs border border-stone-800">
                     <div className="flex items-center gap-4 sm:gap-5">
-                      {/* User Image ID with Border Radius */}
-                      <div className="relative shrink-0">
-                        {userImg ? (
-                          <img
-                            src={userImg}
-                            alt={userData.name}
-                            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-[#ffcc00] shadow-md bg-stone-900"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-stone-800/90 border-2 border-[#ffcc00] flex flex-col items-center justify-center text-amber-300 shadow-md">
-                            <User className="w-8 h-8 text-amber-400" />
-                            <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">ID Photo</span>
-                          </div>
-                        )}
-                        <div
-                          className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-stone-900 flex items-center justify-center shadow-xs"
-                          title="Verified Identity"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5 text-white stroke-[2.5]" />
-                        </div>
-                      </div>
+                      {/* User Image ID with Professional Luxury Border Radius (Locked: Admin Only) */}
+                      <UserProfileAvatar
+                        src={userImg}
+                        name={userData.name}
+                        size="lg"
+                        shape="rounded"
+                        showVerifiedBadge={true}
+                        onEditClick={() => setShowPhotoLockNotice(true)}
+                      />
 
                       <div className="space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -1984,10 +2012,75 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
       </footer>
 
       {/* Online & Mobile Security Center Modal */}
-      <OnlineMobileSecurityModal
-        isOpen={showSecurityModal}
-        onClose={() => setShowSecurityModal(false)}
+      {/* Hidden file input for changing profile photo */}
+      <input
+        ref={avatarFileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleAvatarFileSelected}
       />
+
+      {/* Interactive Face & Photo Positioner Modal */}
+      {photoCropSrc && (
+        <ImageCropPositionModal
+          isOpen={Boolean(photoCropSrc)}
+          imageSrc={photoCropSrc}
+          cropShape="circle"
+          title="Position Face & Adjust Profile Photo"
+          onCropComplete={handleAvatarCropComplete}
+          onCancel={() => setPhotoCropSrc(null)}
+        />
+      {/* Official Photo ID Lock Notice Modal */}
+      {showPhotoLockNotice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-stone-300 animate-in zoom-in-95">
+            <div className="bg-[#d71e28] text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-[#ffcc00]" />
+                <h4 className="font-bold text-sm tracking-tight">Verified ID Photo Record Locked</h4>
+              </div>
+              <button
+                onClick={() => setShowPhotoLockNotice(false)}
+                className="p-1 rounded-full hover:bg-black/20 text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-stone-700">
+              <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-amber-900 text-xs">
+                <Lock className="w-5 h-5 text-amber-600 shrink-0" />
+                <p className="leading-relaxed">
+                  <strong>Banking KYC & Security Compliance:</strong> Under Federal banking regulations, once an account is opened and an identification photo is submitted, the image is permanently locked as an official record. Account holders cannot modify identity photos.
+                </p>
+              </div>
+
+              <p className="text-xs text-stone-600 leading-relaxed">
+                If your legal appearance, name, or government credentials have changed, please contact an authorized <strong>Bank Administrator</strong> who can review and update your official identity photo.
+              </p>
+
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-stone-200">
+                <button
+                  onClick={() => {
+                    setShowPhotoLockNotice(false);
+                    setIsUserDetailsOpen(true);
+                  }}
+                  className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-semibold cursor-pointer"
+                >
+                  View Application Details
+                </button>
+                <button
+                  onClick={() => setShowPhotoLockNotice(false)}
+                  className="px-4 py-2 bg-[#d71e28] hover:bg-[#b81620] text-white rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  Understood
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

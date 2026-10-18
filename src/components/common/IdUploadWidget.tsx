@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { Camera, Upload, CheckCircle2, X, Eye, FileText, ShieldCheck, Sparkles, RefreshCw } from 'lucide-react';
+import { Camera, Upload, CheckCircle2, X, Eye, FileText, ShieldCheck, Sparkles, RefreshCw, Move } from 'lucide-react';
 import { compressImageFile } from '../../utils/imageUtils';
+import { ImageCropPositionModal } from './ImageCropPositionModal';
 
 interface IdUploadWidgetProps {
   frontImage?: string;
@@ -98,27 +99,22 @@ export const IdUploadWidget: React.FC<IdUploadWidgetProps> = ({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [activePreviewUrl, setActivePreviewUrl] = useState<string>('');
   const [dragActive, setDragActive] = useState(false);
+  const [rawImageToCrop, setRawImageToCrop] = useState<string | null>(null);
+  const [cropTargetIsFront, setCropTargetIsFront] = useState(true);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, isFront: boolean) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setCropTargetIsFront(isFront);
     try {
       const dataUrl = await compressImageFile(file);
-      if (isFront) {
-        onFrontChange(dataUrl);
-      } else if (onBackChange) {
-        onBackChange(dataUrl);
-      }
+      setRawImageToCrop(dataUrl);
     } catch {
       const reader = new FileReader();
       reader.onload = (event) => {
         const dataUrl = event.target?.result as string;
-        if (isFront) {
-          onFrontChange(dataUrl);
-        } else if (onBackChange) {
-          onBackChange(dataUrl);
-        }
+        setRawImageToCrop(dataUrl);
       };
       reader.readAsDataURL(file);
     }
@@ -143,14 +139,15 @@ export const IdUploadWidget: React.FC<IdUploadWidgetProps> = ({
 
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
+      setCropTargetIsFront(true);
       try {
         const dataUrl = await compressImageFile(file);
-        onFrontChange(dataUrl);
+        setRawImageToCrop(dataUrl);
       } catch {
         const reader = new FileReader();
         reader.onload = (event) => {
           const dataUrl = event.target?.result as string;
-          onFrontChange(dataUrl);
+          setRawImageToCrop(dataUrl);
         };
         reader.readAsDataURL(file);
       }
@@ -260,16 +257,28 @@ export const IdUploadWidget: React.FC<IdUploadWidgetProps> = ({
               </div>
             </div>
 
-            <div className="flex justify-between items-center text-[11px] text-stone-500 pt-1">
-              <span>Format: JPEG / PNG / WebP / SVG</span>
-              <div className="flex items-center gap-3">
+            <div className="flex flex-wrap justify-between items-center gap-2 text-[11px] text-stone-500 pt-1">
+              <span>Format: JPEG / PNG / WebP</span>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCropTargetIsFront(true);
+                    setRawImageToCrop(frontImage);
+                  }}
+                  className="text-amber-700 hover:text-amber-900 font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200"
+                  title="Position face or adjust framing"
+                >
+                  <Move className="w-3 h-3 text-amber-600" />
+                  <span>Adjust Face & Framing</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => cameraInputRef.current?.click()}
                   className="text-stone-700 hover:text-stone-900 font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
                 >
                   <Camera className="w-3 h-3 text-[#d71e28]" />
-                  <span>Retake Photo</span>
+                  <span>Retake</span>
                 </button>
                 <button
                   type="button"
@@ -277,7 +286,7 @@ export const IdUploadWidget: React.FC<IdUploadWidgetProps> = ({
                   className="text-[#d71e28] font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
                 >
                   <RefreshCw className="w-3 h-3" />
-                  <span>Choose Another File</span>
+                  <span>Choose Another</span>
                 </button>
               </div>
             </div>
@@ -393,6 +402,25 @@ export const IdUploadWidget: React.FC<IdUploadWidgetProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* High-Precision Face & ID Crop / Positioning Modal */}
+      {rawImageToCrop && (
+        <ImageCropPositionModal
+          isOpen={Boolean(rawImageToCrop)}
+          imageSrc={rawImageToCrop}
+          cropShape="circle"
+          title="Align Face & Position Photo"
+          onCropComplete={(croppedDataUrl) => {
+            if (cropTargetIsFront) {
+              onFrontChange(croppedDataUrl);
+            } else if (onBackChange) {
+              onBackChange(croppedDataUrl);
+            }
+            setRawImageToCrop(null);
+          }}
+          onCancel={() => setRawImageToCrop(null)}
+        />
       )}
     </div>
   );

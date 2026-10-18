@@ -33,6 +33,8 @@ import { useGreeting } from '../../utils/greeting';
 import { authService } from '../../services/authService';
 import { SAMPLE_ID_FRONT } from '../common/IdUploadWidget';
 import { compressImageFile } from '../../utils/imageUtils';
+import { ImageCropPositionModal } from '../common/ImageCropPositionModal';
+import { UserProfileAvatar } from '../common/UserProfileAvatar';
 
 interface UserDetailsModalProps {
   isOpen: boolean;
@@ -61,6 +63,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   const [enlargedImageUrl, setEnlargedImageUrl] = useState<string>('');
   const [uploadSuccessMessage, setUploadSuccessMessage] = useState<string>('');
   const [isUpdatingId, setIsUpdatingId] = useState(false);
+  const [pendingCropImage, setPendingCropImage] = useState<string | null>(null);
 
   const handleUploadIdImage = async (dataUrl: string) => {
     if (!dataUrl) return;
@@ -104,7 +107,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
         onUpdateUserData(updatedProfile);
       }
 
-      setUploadSuccessMessage('Your government photo ID has been successfully uploaded and updated on your profile.');
+      setUploadSuccessMessage('Your photo has been positioned, cropped, and saved to your profile.');
       setTimeout(() => setUploadSuccessMessage(''), 5000);
     } catch (e) {
       console.error('Failed to update ID image:', e);
@@ -119,12 +122,12 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
 
     try {
       const dataUrl = await compressImageFile(file);
-      handleUploadIdImage(dataUrl);
+      setPendingCropImage(dataUrl);
     } catch {
       const reader = new FileReader();
       reader.onload = (event) => {
         const dataUrl = event.target?.result as string;
-        handleUploadIdImage(dataUrl);
+        setPendingCropImage(dataUrl);
       };
       reader.readAsDataURL(file);
     }
@@ -296,47 +299,41 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
         <div className="bg-gradient-to-r from-stone-900 via-stone-850 to-red-950 text-white px-6 py-4 flex flex-wrap items-center justify-between gap-4 shrink-0 border-b border-stone-800">
           <div className="flex items-center gap-4">
             <div className="relative group shrink-0">
-              {userData.avatarUrl || userData.idPhotoUrl || reg.idPhotoUrl ? (
+              <UserProfileAvatar
+                src={userData.avatarUrl || userData.idPhotoUrl || reg.idPhotoUrl}
+                name={userData.name}
+                size="md"
+                shape="rounded"
+                showVerifiedBadge={true}
+                onEditClick={() => {
+                  const currentImg = userData.avatarUrl || userData.idPhotoUrl || reg.idPhotoUrl;
+                  if (currentImg) {
+                    setEnlargedImageUrl(currentImg);
+                    setShowEnlargeModal(true);
+                  } else {
+                    fileInputRef.current?.click();
+                  }
+                }}
+              />
+
+              {/* Verified Lock Badge: Only Admin can update */}
+              {(userData.avatarUrl || userData.idPhotoUrl || reg.idPhotoUrl) ? (
                 <div
-                  onClick={() => {
-                    const idImg = userData.idPhotoUrl || reg.idPhotoUrl;
-                    if (idImg) {
-                      setEnlargedImageUrl(idImg);
-                      setShowEnlargeModal(true);
-                    }
-                  }}
-                  className="cursor-pointer"
-                  title="Click to view verified government ID document"
+                  className="absolute -top-1 -right-1 bg-stone-900 border border-amber-400/80 p-1 rounded-full shadow-md z-20 text-amber-400"
+                  title="Official Record Locked • Modification Restricted to Bank Administrator"
                 >
-                  <img
-                    src={userData.avatarUrl || userData.idPhotoUrl || reg.idPhotoUrl}
-                    alt={userData.name}
-                    className="w-16 h-16 rounded-full object-cover border-2 border-[#ffcc00] shadow-md group-hover:brightness-110 transition-all bg-white"
-                  />
-                  <div className="absolute -bottom-1 -right-1 bg-emerald-600 rounded-full p-0.5 border-2 border-stone-900">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                  </div>
+                  <Lock className="w-3 h-3 text-amber-400" />
                 </div>
               ) : (
-                <div
+                <button
+                  type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-16 h-16 rounded-full bg-white/10 border-2 border-dashed border-white/40 hover:border-[#ffcc00] flex flex-col items-center justify-center text-[#ffcc00] cursor-pointer transition-colors"
-                  title="Click to upload your ID document"
+                  className="absolute -top-1.5 -right-1.5 bg-black/85 hover:bg-[#d71e28] text-white p-1 rounded-full border border-white/40 shadow-md transition-colors cursor-pointer z-20"
+                  title="Upload initial ID photo"
                 >
-                  <Camera className="w-6 h-6" />
-                  <span className="text-[9px] font-bold mt-0.5">Add ID</span>
-                </div>
+                  <Camera className="w-3 h-3 text-[#ffcc00]" />
+                </button>
               )}
-
-              {/* Quick camera button badge to change/update ID anytime */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute -top-1 -right-1 bg-black/80 hover:bg-[#d71e28] text-white p-1 rounded-full border border-white/40 shadow-sm transition-colors cursor-pointer"
-                title="Upload or change ID photo"
-              >
-                <Camera className="w-3 h-3 text-[#ffcc00]" />
-              </button>
             </div>
 
             <div>
@@ -348,7 +345,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                   REF: DSG8921-061000227
                 </span>
               </div>
-              <h2 className="font-serif text-2xl sm:text-3xl font-normal text-white break-words">
+              <h2 className="font-serif text-2xl sm:text-3xl font-normal text-white">
                 {greeting}, {userData.name}!
               </h2>
               <p className="text-xs text-stone-300 mt-1">
@@ -358,16 +355,26 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUpdatingId}
-              className="bg-[#d71e28] hover:bg-[#b81620] text-white px-3.5 py-2 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
-              title="Upload new ID photo from computer or phone"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              <span>{userData.idPhotoUrl || reg.idPhotoUrl ? 'Update ID Photo' : 'Upload ID Photo'}</span>
-            </button>
+            {(userData.idPhotoUrl || reg.idPhotoUrl) ? (
+              <div
+                className="bg-stone-900/90 border border-amber-400/60 text-amber-300 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-xs"
+                title="Under federal banking regulations, ID records cannot be modified by account holders. Contact administrator for updates."
+              >
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
+                <span>Photo ID Locked (Admin Only)</span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUpdatingId}
+                className="bg-[#d71e28] hover:bg-[#b81620] text-white px-3.5 py-2 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+                title="Upload ID photo"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>Upload ID Photo</span>
+              </button>
+            )}
 
             <button
               onClick={() => downloadSignatureCardPdf(reg, userData.name)}
@@ -942,6 +949,21 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Interactive Face & Image Positioner Modal */}
+      {pendingCropImage && (
+        <ImageCropPositionModal
+          isOpen={Boolean(pendingCropImage)}
+          imageSrc={pendingCropImage}
+          cropShape="circle"
+          title="Position Face & Crop Profile Photo"
+          onCropComplete={(croppedDataUrl) => {
+            handleUploadIdImage(croppedDataUrl);
+            setPendingCropImage(null);
+          }}
+          onCancel={() => setPendingCropImage(null)}
+        />
       )}
     </div>
   );
