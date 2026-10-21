@@ -1,18 +1,23 @@
 import { MongoClient, Db, Collection } from 'mongodb';
+import dotenv from 'dotenv';
 
-export const MONGODB_URI = process.env.MONGODB_URI || '';
+dotenv.config();
+
+const DEFAULT_MONGODB_URI = 'mongodb+srv://auragiftmarket:admin12345@auragiftmarket.g4bvnod.mongodb.net/WellsFargo?appName=auragiftmarket';
+export const MONGODB_URI = process.env.MONGODB_URI || DEFAULT_MONGODB_URI;
 
 export const DB_NAME = 'WellsFargo';
 
 let cachedClient: MongoClient | null = null;
 let cachedDb: Db | null = null;
-let mongoConnectionFailed = false;
+let connectingPromise: Promise<MongoClient | null> | null = null;
 
 /**
  * Returns a connected MongoClient instance, reusing existing connections across serverless runs.
  */
 export async function getMongoClient(): Promise<MongoClient | null> {
-  if (!MONGODB_URI || mongoConnectionFailed) {
+  const uri = process.env.MONGODB_URI || MONGODB_URI || DEFAULT_MONGODB_URI;
+  if (!uri) {
     return null;
   }
 
@@ -20,21 +25,32 @@ export async function getMongoClient(): Promise<MongoClient | null> {
     return cachedClient;
   }
 
-  try {
-    const client = new MongoClient(MONGODB_URI, {
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 2000,
-      connectTimeoutMS: 2000,
-    });
-
-    await client.connect();
-    cachedClient = client;
-    return client;
-  } catch (err: any) {
-    mongoConnectionFailed = true;
-    console.warn('[AI Studio] MongoDB not connected or direct TCP blocked — using local store:', err?.message);
-    return null;
+  if (connectingPromise) {
+    return connectingPromise;
   }
+
+  connectingPromise = (async () => {
+    try {
+      const client = new MongoClient(uri, {
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 15000,
+        connectTimeoutMS: 15000,
+      });
+
+      await client.connect();
+      cachedClient = client;
+      cachedDb = client.db(DB_NAME);
+      console.log('🟢 MongoDB Atlas: Connected successfully to "WellsFargo" database.');
+      return client;
+    } catch (err: any) {
+      console.warn('⚠️ MongoDB Atlas connection error (will retry on next request):', err?.message);
+      return null;
+    } finally {
+      connectingPromise = null;
+    }
+  })();
+
+  return connectingPromise;
 }
 
 /**

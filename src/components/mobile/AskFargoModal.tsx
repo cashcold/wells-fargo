@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Send, PieChart, Sparkles, HelpCircle, ArrowRight } from 'lucide-react';
 import { UserProfile } from '../../types/banking';
+import { apiFetch } from '../../utils/api';
 
 interface AskFargoModalProps {
   isOpen: boolean;
@@ -52,7 +53,7 @@ export const AskFargoModal: React.FC<AskFargoModalProps> = ({
         0
       );
 
-      const response = await fetch('/api/fargo', {
+      const response = await apiFetch('/api/fargo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

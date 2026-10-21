@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Camera, CheckCircle, Info, ChevronDown, Check, RefreshCw, Clock, ShieldCheck } from 'lucide-react';
 import { BankAccount, CheckDepositRecord } from '../../types/banking';
+import { apiFetch } from '../../utils/api';
 
 interface DepositTabProps {
   accounts: BankAccount[];
@@ -49,7 +50,7 @@ export const DepositTab: React.FC<DepositTabProps> = ({
 
     try {
       // Real API call to post deposit to database with PENDING status
-      const res = await fetch('/api/deposits', {
+      const res = await apiFetch('/api/deposits', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

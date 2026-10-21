@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { BankAccount, UserProfile } from '../../types/banking';
 import { downloadLoanDisclosurePdf } from '../../utils/loanPdfGenerator';
+import { apiFetch } from '../../utils/api';
 
 interface LoanConfiguratorModalProps {
   isOpen: boolean;
@@ -42,7 +43,7 @@ export const LoanConfiguratorModal: React.FC<LoanConfiguratorModalProps> = ({
 
   useEffect(() => {
     let isMounted = true;
-    fetch('/api/rates')
+    apiFetch('/api/rates')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!isMounted || !data?.lendingRates) return;

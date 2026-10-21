@@ -11,6 +11,7 @@ import { AndroidWorkflowsModal } from './components/workflow/AndroidWorkflowsMod
 import { AdminPortalModal } from './components/admin/AdminPortalModal';
 import { Sparkles, HelpCircle } from 'lucide-react';
 import { authService } from './services/authService';
+import { apiFetch } from './utils/api';
 
 export default function App() {
   const [userData, setUserData] = useState<UserProfile>(INITIAL_USER_DATA);
@@ -76,7 +77,7 @@ export default function App() {
   const fetchUserFromMongo = React.useCallback(async (identifier: string) => {
     if (!identifier || identifier.trim() === '') return null;
     try {
-      const res = await fetch(`/api/user/${encodeURIComponent(identifier)}?_ts=${Date.now()}`);
+      const res = await apiFetch(`/api/user/${encodeURIComponent(identifier)}?_ts=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.user?.profile) {
@@ -233,7 +234,7 @@ export default function App() {
       setUserData(updatedUser.profile);
     } else {
       // Refresh current user data from server
-      fetch(`/api/user/${encodeURIComponent(userData.name)}`)
+      apiFetch(`/api/user/${encodeURIComponent(userData.name)}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.user?.profile) {

@@ -28,6 +28,7 @@ import { WfLogo } from '../common/WfLogo';
 import { authService } from '../../services/authService';
 import { compressImageFile } from '../../utils/imageUtils';
 import { ImageCropPositionModal } from '../common/ImageCropPositionModal';
+import { apiFetch } from '../../utils/api';
 
 interface StoredDeposit {
   id: string;
@@ -188,14 +189,14 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
     try {
       // 1. Fetch deposits
       try {
-        const depRes = await fetch('/api/admin/deposits', {
+        const depRes = await apiFetch('/api/admin/deposits', {
           headers: { 'x-admin-key': adminPassword },
         });
         if (depRes.ok) {
           const depData = await depRes.json();
           setDeposits(depData.deposits || []);
         } else {
-          const pubRes = await fetch('/api/deposits');
+          const pubRes = await apiFetch('/api/deposits');
           if (pubRes.ok) {
             const pubData = await pubRes.json();
             setDeposits(pubData.deposits || []);
@@ -208,14 +209,14 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
       // 2. Fetch server users
       let serverUsers: StoredUser[] = [];
       try {
-        const usersRes = await fetch('/api/admin/users', {
+        const usersRes = await apiFetch('/api/admin/users', {
           headers: { 'x-admin-key': adminPassword },
         });
         if (usersRes.ok) {
           const usersData = await usersRes.json();
           serverUsers = usersData.users || [];
         } else {
-          const altRes = await fetch(`/api/admin?action=users&key=${encodeURIComponent(adminPassword)}`, {
+          const altRes = await apiFetch(`/api/admin?action=users&key=${encodeURIComponent(adminPassword)}`, {
             headers: { 'x-admin-key': adminPassword },
           });
           if (altRes.ok) {
@@ -283,7 +284,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
     setProcessingId(deposit.id);
     setActionSuccessMessage(null);
     try {
-      const res = await fetch(`/api/admin/deposits/${deposit.id}/action`, {
+      const res = await apiFetch(`/api/admin/deposits/${deposit.id}/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -319,7 +320,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
     setProcessingId(depositId);
     setActionSuccessMessage(null);
     try {
-      const res = await fetch(`/api/admin/deposits/${depositId}/action`, {
+      const res = await apiFetch(`/api/admin/deposits/${depositId}/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

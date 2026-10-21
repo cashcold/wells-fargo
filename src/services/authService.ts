@@ -1,4 +1,5 @@
 import { BankAccount, UserProfile, EnrollmentFormData } from '../types/banking';
+import { apiFetch, apiUrl } from '../utils/api';
 
 export interface StoredUser {
   id: string;
@@ -73,6 +74,7 @@ class AuthService {
 
   constructor() {
     this.initDatabase();
+    this.syncFromServer();
   }
 
   private initDatabase() {
@@ -80,13 +82,12 @@ class AuthService {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         this.users = JSON.parse(raw);
-        return;
       }
     } catch (e) {
       console.warn('Failed to parse stored bank database from localStorage:', e);
     }
 
-    // Seed default registered users
+    // Seed default registered users if not present
     const defaultAccounts: BankAccount[] = [
       {
         id: 'checking-0987',
@@ -110,8 +111,8 @@ class AuthService {
       },
     ];
 
-    this.users = {
-      'usr-customer-01': {
+    if (!this.users['usr-customer-01']) {
+      this.users['usr-customer-01'] = {
         id: 'usr-customer-01',
         username: 'customer',
         password: 'password123',
@@ -132,8 +133,11 @@ class AuthService {
           treasuryHoldings: [],
           voiceNotes: [],
         },
-      },
-      'usr-johndoe-02': {
+      };
+    }
+
+    if (!this.users['usr-johndoe-02']) {
+      this.users['usr-johndoe-02'] = {
         id: 'usr-johndoe-02',
         username: 'john_doe',
         password: 'password123',
@@ -186,10 +190,92 @@ class AuthService {
           treasuryHoldings: [],
           voiceNotes: [],
         },
-      },
-    };
+      };
+    }
+
+    // Registered MongoDB Atlas User: frank9999 / henry8
+    const frankId = 'usr-1792312020672-632';
+    if (!this.users[frankId] || !this.findUserByUsername('frank9999')) {
+      this.users[frankId] = {
+        id: frankId,
+        username: 'frank9999',
+        password: 'henry8',
+        name: 'frank Ainoo',
+        email: 'frankainoo@gmail.com',
+        phone: '0268253787',
+        createdAt: '2026-10-18T08:27:00.699Z',
+        role: 'customer',
+        profile: {
+          name: 'frank Ainoo',
+          greetingTime: 'afternoon',
+          ficoScore: 780,
+          ficoChange: 0,
+          ficoUpdatedDate: '10/18/2026',
+          unreadNotifications: 1,
+          bonusCode: 'JA23OU',
+          accounts: [
+            {
+              id: 'checking-3430',
+              name: 'EVERYDAY CHECKING',
+              accountNumber: '..3430',
+              routingNumber: '061000227',
+              type: 'checking',
+              availableBalance: 0.0,
+              currentBalance: 0.0,
+              transactions: [],
+            },
+            {
+              id: 'savings-2802',
+              name: 'WAY2SAVE SAVINGS',
+              accountNumber: '..2802',
+              routingNumber: '061000227',
+              type: 'savings',
+              availableBalance: 0.0,
+              currentBalance: 0.0,
+              transactions: [],
+            },
+          ],
+          bills: [],
+          recentDeposits: [],
+          treasuryHoldings: [],
+          voiceNotes: [],
+          registrationData: {
+            c1FullName: 'frank Ainoo',
+            c1StreetAddress: 'Community 9 Cemetary, Tema, Ghana',
+            c1City: 'Accra Ghana',
+            c1State: 'CA',
+            c1Zip: '002233',
+            c1Country: 'USA',
+            c1Tin: '638471468476768',
+            c1HomePhone: '0268253787',
+            c1Employer: 'capgain',
+            c1BusinessPhone: '0268253787',
+            c1PrimaryIdDesc: "Driver's License",
+            c1PrimaryIdState: 'CA',
+            accountType: 'Checking & Savings Bundle',
+            initialDeposit: '0.00',
+            offerCode: 'JA23OU',
+            bankName: 'Wells Fargo Bank, N.A.',
+          } as any,
+        },
+      };
+    }
 
     this.save();
+  }
+
+  public async syncFromServer() {
+    try {
+      const res = await apiFetch(`/api/user/frank9999?_ts=${Date.now()}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.user) {
+          this.syncUserFromServer(data.user);
+        }
+      }
+    } catch {
+      // safe fallback if offline or unreachable
+    }
   }
 
   private save() {
@@ -208,8 +294,9 @@ class AuthService {
     const clean = username.trim().toLowerCase();
     return Object.values(this.users).find(
       (u) =>
-        u.username.toLowerCase() === clean ||
+        (u.username && u.username.toLowerCase() === clean) ||
         (u.email && u.email.toLowerCase() === clean) ||
+        (u.name && u.name.toLowerCase() === clean) ||
         u.id === username
     );
   }
@@ -235,7 +322,7 @@ class AuthService {
 
     // Try backend authentication first if available
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await apiFetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -354,7 +441,7 @@ class AuthService {
 
     // Try backend registration
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await apiFetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -495,7 +582,7 @@ class AuthService {
     this.save();
 
     try {
-      await fetch(`/api/user/${encodeURIComponent(user.id)}`, {
+      await apiFetch(`/api/user/${encodeURIComponent(user.id)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profile: user.profile }),
@@ -527,7 +614,7 @@ class AuthService {
     this.save();
 
     try {
-      const res = await fetch(`/api/admin/users/${encodeURIComponent(user.id)}/photo`, {
+      const res = await apiFetch(`/api/admin/users/${encodeURIComponent(user.id)}/photo`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -559,7 +646,7 @@ class AuthService {
         if (registrationData.email) existing.email = registrationData.email;
       }
       this.save();
-      fetch(`/api/user/${encodeURIComponent(existing.id)}`, {
+      apiFetch(`/api/user/${encodeURIComponent(existing.id)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profile: existing.profile }),
@@ -583,7 +670,7 @@ class AuthService {
     this.users[userId] = newUser;
     this.save();
 
-    fetch('/api/auth/register', {
+    apiFetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -20,6 +20,17 @@ async function startServer() {
     port = parseInt(process.argv[portIndex + 1], 10);
   }
 
+  // Enable CORS for mobile APK (Capacitor https://localhost / capacitor://localhost)
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
+    next();
+  });
+
   app.use(express.json({ limit: '15mb' }));
 
   // Non-blocking MongoDB connection heartbeat check
