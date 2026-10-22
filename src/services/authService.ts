@@ -196,9 +196,8 @@ class AuthService {
 
     // Registered MongoDB Atlas User: frank9999 / henry8
     const frankId = 'usr-1792312020672-632';
-    const existingFrank = this.users[frankId] || this.findUserByUsername('frank9999');
 
-    // Always ensure frank9999 has verified photo ID and live balances even in offline APK mode
+    // Strictly ensure frank9999 has certified verified photo ID and live balances in both web and mobile APK
     const frankAccounts: BankAccount[] = [
       {
         id: 'checking-5776',
@@ -233,8 +232,8 @@ class AuthService {
       role: 'customer',
       profile: {
         name: 'frank Ainoo',
-        avatarUrl: existingFrank?.profile?.avatarUrl || FRANK_AVATAR_BASE64,
-        idPhotoUrl: existingFrank?.profile?.idPhotoUrl || FRANK_AVATAR_BASE64,
+        avatarUrl: FRANK_AVATAR_BASE64,
+        idPhotoUrl: FRANK_AVATAR_BASE64,
         idType: "Driver's License",
         greetingTime: 'afternoon',
         ficoScore: 780,
@@ -242,14 +241,11 @@ class AuthService {
         ficoUpdatedDate: '10/22/2026',
         unreadNotifications: 1,
         bonusCode: 'JA23OU',
-        accounts:
-          existingFrank?.profile?.accounts && existingFrank.profile.accounts.length > 0 && existingFrank.profile.accounts[0].availableBalance > 0
-            ? existingFrank.profile.accounts
-            : frankAccounts,
-        bills: existingFrank?.profile?.bills || [],
-        recentDeposits: existingFrank?.profile?.recentDeposits || [],
-        treasuryHoldings: existingFrank?.profile?.treasuryHoldings || [],
-        voiceNotes: existingFrank?.profile?.voiceNotes || [],
+        accounts: frankAccounts,
+        bills: [],
+        recentDeposits: [],
+        treasuryHoldings: [],
+        voiceNotes: [],
         registrationData: {
           c1FullName: 'frank Ainoo',
           c1StreetAddress: 'Community 9 Cemetary, Tema, Ghana',
@@ -303,14 +299,42 @@ class AuthService {
   }
 
   public findUserByUsername(username: string): StoredUser | undefined {
+    if (!username || !username.trim()) return undefined;
     const clean = username.trim().toLowerCase();
-    return Object.values(this.users).find(
+    const cleanAlpha = clean.replace(/[^a-z0-9]/g, '');
+
+    // 1. Direct match on username, email, name, or id
+    const direct = Object.values(this.users).find(
       (u) =>
         (u.username && u.username.toLowerCase() === clean) ||
         (u.email && u.email.toLowerCase() === clean) ||
         (u.name && u.name.toLowerCase() === clean) ||
-        u.id === username
+        u.id === username.trim()
     );
+    if (direct) return direct;
+
+    // 2. Normalized match (without spaces or special characters)
+    const normalized = Object.values(this.users).find(
+      (u) =>
+        (u.username && u.username.toLowerCase().replace(/[^a-z0-9]/g, '') === cleanAlpha) ||
+        (u.name && u.name.toLowerCase().replace(/[^a-z0-9]/g, '') === cleanAlpha)
+    );
+    if (normalized) return normalized;
+
+    // 3. Flexible aliases for Frank Ainoo ("frank", "frank9999", "frank ainoo", "ainoo")
+    if (cleanAlpha.includes('frank') || cleanAlpha.includes('ainoo')) {
+      const frank =
+        this.users['usr-1792312020672-632'] ||
+        Object.values(this.users).find(
+          (u) =>
+            u.id === 'usr-1792312020672-632' ||
+            u.username?.toLowerCase() === 'frank9999' ||
+            u.name?.toLowerCase().includes('ainoo')
+        );
+      if (frank) return frank;
+    }
+
+    return undefined;
   }
 
   public async login(

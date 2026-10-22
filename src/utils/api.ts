@@ -47,12 +47,31 @@ export async function apiFetch(path: string, options?: RequestInit): Promise<Res
   const primaryUrl = apiUrl(path);
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
     const res = await fetch(primaryUrl, {
       ...options,
       signal: options?.signal || controller.signal,
     });
     clearTimeout(timeoutId);
+
+    // If response is HTML (e.g. Vercel SSO protection / 302 login page / 404 page), attempt fallback if on Capacitor
+    const contentType = res.headers.get('content-type') || '';
+    if (!res.ok || contentType.includes('text/html')) {
+      const base = getApiBaseUrl();
+      if (base && base === VERCEL_PROD_API_URL) {
+        try {
+          const cleanPath = path.startsWith('/') ? path : `/${path}`;
+          const fallbackUrl = `${AIS_DEV_API_URL}${cleanPath}`;
+          const fallbackRes = await fetch(fallbackUrl, options);
+          if (fallbackRes.ok && (fallbackRes.headers.get('content-type') || '').includes('application/json')) {
+            return fallbackRes;
+          }
+        } catch {
+          // ignore fallback error and return original res
+        }
+      }
+    }
+
     return res;
   } catch (err) {
     // If running in Capacitor and primary URL had network failure, attempt secondary dev URL
