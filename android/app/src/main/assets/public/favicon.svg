@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="wfRedGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e0202a"/>
+      <stop offset="100%" stop-color="#b8151f"/>
+    </linearGradient>
+    <linearGradient id="wfGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff176"/>
+      <stop offset="50%" stop-color="#ffd54f"/>
+      <stop offset="100%" stop-color="#ffb300"/>
+    </linearGradient>
+    <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Wells Fargo Iconic Red Square (Rounded for Web Favicon / App Icon) -->
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="url(#wfRedGrad)" filter="url(#subtleShadow)"/>
+  
+  <!-- Subtle inner border for premium bank finish -->
+  <rect x="24" y="24" width="464" height="464" rx="88" fill="none" stroke="#ff4757" stroke-width="4" opacity="0.4"/>
+
+  <!-- Iconic Wells Fargo Stagecoach Silhouette with 6 Galloping Horses -->
+  <g transform="translate(48, 80) scale(1.15)" fill="url(#wfGoldGrad)">
+    <!-- Stagecoach Body (Concord Coach) -->
+    <path d="M 68 88 
+             C 68 76, 76 68, 88 68 
+             L 136 68 
+             C 148 68, 156 76, 156 88 
+             L 156 120 
+             C 156 132, 148 140, 136 140 
+             L 88 140 
+             C 76 140, 68 132, 68 120 
+             Z" />
+    
+    <!-- Coach windows & doors -->
+    <rect x="80" y="80" width="24" height="28" rx="4" fill="#b8151f" />
+    <rect x="116" y="80" width="24" height="28" rx="4" fill="#b8151f" />
+    
+    <!-- Driver on roof & seat -->
+    <path d="M 136 52 C 136 46, 142 42, 148 42 C 154 42, 160 46, 160 52 L 160 68 L 136 68 Z" />
+    <!-- Driver Hat & reins -->
+    <path d="M 142 42 L 158 42 L 162 46 L 138 46 Z" />
+    <!-- Rear luggage boot -->
+    <path d="M 52 84 L 68 84 L 68 128 L 56 120 Z" />
+
+    <!-- Coach Wheels -->
+    <!-- Rear Large Wheel -->
+    <circle cx="84" cy="144" r="26" stroke="url(#wfGoldGrad)" stroke-width="6" fill="none" />
+    <circle cx="84" cy="144" r="7" fill="url(#wfGoldGrad)" />
+    <line x1="84" y1="118" x2="84" y2="170" stroke="url(#wfGoldGrad)" stroke-width="3" />
+    <line x1="58" y1="144" x2="110" y2="144" stroke="url(#wfGoldGrad)" stroke-width="3" />
+    <!-- Front Small Wheel -->
+    <circle cx="146" cy="148" r="20" stroke="url(#wfGoldGrad)" stroke-width="5" fill="none" />
+    <circle cx="146" cy="148" r="6" fill="url(#wfGoldGrad)" />
+    <line x1="146" y1="128" x2="146" y2="168" stroke="url(#wfGoldGrad)" stroke-width="3" />
+    <line x1="126" y1="148" x2="166" y2="148" stroke="url(#wfGoldGrad)" stroke-width="3" />
+    
+    <!-- Hitch Pole and Whiffletree -->
+    <line x1="156" y1="144" x2="340" y2="136" stroke="url(#wfGoldGrad)" stroke-width="5" stroke-linecap="round" />
+
+    <!-- Six Galloping Horses (Stylized dynamic silhouettes) -->
+    <!-- Horse Pair 1 (Wheelers) -->
+    <path d="M 180 134 C 188 120, 202 110, 214 116 C 220 119, 226 112, 230 102 C 234 100, 238 106, 236 116 L 226 126 L 222 144 L 212 140 L 216 130 L 196 136 L 186 148 L 178 144 Z" />
+    <!-- Horse Pair 2 (Swingers) -->
+    <path d="M 235 130 C 243 116, 257 106, 269 112 C 275 115, 281 108, 285 98 C 289 96, 293 102, 291 112 L 281 122 L 277 140 L 267 136 L 271 126 L 251 132 L 241 144 L 233 140 Z" />
+    <!-- Horse Pair 3 (Leaders) -->
+    <path d="M 290 126 C 298 112, 312 102, 324 108 C 330 111, 336 104, 340 94 C 344 92, 348 98, 346 108 L 336 118 L 332 136 L 322 132 L 326 122 L 306 128 L 296 140 L 288 136 Z" />
+  </g>
+
+  <!-- Authentic Stacked Typography "WELLS FARGO" in Signature Gold -->
+  <g fill="url(#wfGoldGrad)" text-anchor="middle">
+    <!-- WELLS -->
+    <text x="256" y="345" 
+          font-family="'Source Serif 4', Georgia, 'Times New Roman', serif" 
+          font-size="88" 
+          font-weight="900" 
+          letter-spacing="12">
+      WELLS
+    </text>
+    <!-- FARGO -->
+    <text x="256" y="440" 
+          font-family="'Source Serif 4', Georgia, 'Times New Roman', serif" 
+          font-size="88" 
+          font-weight="900" 
+          letter-spacing="12">
+      FARGO
+    </text>
+  </g>
+</svg>

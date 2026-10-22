@@ -53,6 +53,7 @@ import { downloadAccountStatementPdf, downloadTransactionReceiptPdf } from '../.
 import { TransactionDetailModal } from '../common/TransactionDetailModal';
 import { UserProfileAvatar } from '../common/UserProfileAvatar';
 import { ImageCropPositionModal } from '../common/ImageCropPositionModal';
+import { FRANK_AVATAR_BASE64 } from '../../data/frankAvatar';
 import { compressImageFile } from '../../utils/imageUtils';
 import { authService } from '../../services/authService';
 
@@ -474,41 +475,76 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
       <header className="bg-[#d71e28] text-white border-b-2 border-[#ffcc00] shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           {/* Single Compact Header Row */}
-          <div className="h-12 sm:h-14 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+          <div className="h-12 sm:h-14 flex items-center justify-between gap-1.5 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
               <button
                 onClick={onOpenPublicPortal}
-                className="text-left focus:outline-none"
+                className="text-left focus:outline-none shrink-0"
                 title="Return to Wells Fargo Home"
               >
-                <WfLogo size="md" variant="white" />
+                <WfLogo size="sm" variant="white" className="sm:hidden" />
+                <WfLogo size="md" variant="white" className="hidden sm:inline-flex" />
               </button>
+
+              {/* User Avatar & Greeting - Visible on both Mobile Phone & Desktop */}
               <div
                 onClick={() => setIsUserDetailsOpen(true)}
-                className="hidden lg:flex items-center gap-2 pl-3 border-l border-white/20 cursor-pointer hover:opacity-90 transition-opacity"
+                className="flex items-center gap-1.5 sm:gap-2 pl-1.5 sm:pl-3 border-l border-white/20 cursor-pointer hover:opacity-90 transition-opacity min-w-0"
                 title="View Account Profile & Verified ID"
               >
-                {(userData.avatarUrl || userData.idPhotoUrl) && (
-                  <img
-                    src={userData.avatarUrl || userData.idPhotoUrl}
-                    alt={userData.name}
-                    className="w-7 h-7 rounded-full object-cover border border-[#ffcc00] shadow-2xs bg-white"
-                  />
-                )}
-                <span className="text-xs text-white/90 font-medium">
-                  {greeting}, {userData.name}!
-                </span>
+                {(() => {
+                  const navImg =
+                    userData.avatarUrl ||
+                    userData.idPhotoUrl ||
+                    userData.registrationData?.idPhotoUrl ||
+                    userData.registrationData?.selfieUrl ||
+                    (userData.name?.toLowerCase().includes('frank') ? FRANK_AVATAR_BASE64 : undefined);
+
+                  return navImg ? (
+                    <img
+                      src={navImg}
+                      alt={userData.name}
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border border-[#ffcc00] shadow-2xs bg-white shrink-0"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 text-[#ffcc00] flex items-center justify-center font-bold text-xs shrink-0">
+                      {userData.name.charAt(0)}
+                    </div>
+                  );
+                })()}
+                <div className="flex flex-col leading-tight min-w-0">
+                  <span className="text-[11px] sm:text-xs text-white font-bold whitespace-nowrap">
+                    {userData.name}
+                  </span>
+                  <span className="text-[9px] sm:text-[10px] text-white/80 hidden xs:inline whitespace-nowrap">
+                    {greeting}, {userData.name}!
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               {/* View Registration & Profile Details Button */}
               <button
                 onClick={() => setIsUserDetailsOpen(true)}
-                className="inline-flex items-center gap-1.5 bg-black/25 hover:bg-black/35 text-white px-2.5 py-1.5 rounded-full text-xs font-semibold transition-colors border border-white/20"
+                className="inline-flex items-center gap-1 sm:gap-1.5 bg-black/25 hover:bg-black/35 text-white px-2 py-1.5 sm:px-2.5 rounded-full text-xs font-semibold transition-colors border border-white/20"
                 title="View registration information and profile details"
               >
-                <User className="w-3.5 h-3.5 text-amber-300" />
+                {(() => {
+                  const btnImg =
+                    userData.avatarUrl ||
+                    userData.idPhotoUrl ||
+                    (userData.name?.toLowerCase().includes('frank') ? FRANK_AVATAR_BASE64 : undefined);
+                  return btnImg ? (
+                    <img
+                      src={btnImg}
+                      alt={userData.name}
+                      className="w-3.5 h-3.5 rounded-full object-cover border border-[#ffcc00] shrink-0"
+                    />
+                  ) : (
+                    <User className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                  );
+                })()}
                 <span className="hidden sm:inline">My Registration Info</span>
               </button>
 
@@ -525,7 +561,7 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
               {/* Ask Fargo Virtual Assistant button */}
               <button
                 onClick={onOpenAskFargo}
-                className="inline-flex items-center gap-1.5 bg-[#521375] hover:bg-[#681994] text-white px-2.5 py-1.5 rounded-full text-xs font-semibold transition-colors shadow-2xs"
+                className="inline-flex items-center gap-1 sm:gap-1.5 bg-[#521375] hover:bg-[#681994] text-white px-2 py-1.5 sm:px-2.5 rounded-full text-xs font-semibold transition-colors shadow-2xs"
                 title="Ask Fargo Virtual Assistant"
               >
                 <span className="w-4 h-4 rounded-full bg-white text-[#521375] flex items-center justify-center font-bold text-[10px]">
@@ -537,11 +573,11 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
               {/* Sign Off */}
               <button
                 onClick={onSignOff}
-                className="inline-flex items-center gap-1 text-xs font-bold text-white hover:text-stone-200 bg-black/25 hover:bg-black/35 px-3 py-1.5 rounded transition-colors whitespace-nowrap"
+                className="inline-flex items-center gap-1 text-xs font-bold text-white hover:text-stone-200 bg-black/25 hover:bg-black/35 px-2 sm:px-3 py-1.5 rounded transition-colors whitespace-nowrap"
                 title="Sign off your account"
               >
                 <Lock className="w-3.5 h-3.5" />
-                <span>Sign Off</span>
+                <span className="hidden xs:inline">Sign Off</span>
               </button>
 
               {/* Hamburger Side Menu Toggle */}
@@ -908,12 +944,17 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
               {/* Personalized Greeting Banner with User Image ID */}
               {(() => {
                 const primaryChecking = userData.accounts?.find((a) => a.type === 'checking') || userData.accounts?.[0];
-                const userImg = userData.avatarUrl || userData.idPhotoUrl || userData.registrationData?.idPhotoUrl || userData.registrationData?.selfieUrl;
+                const userImg =
+                  userData.avatarUrl ||
+                  userData.idPhotoUrl ||
+                  userData.registrationData?.idPhotoUrl ||
+                  userData.registrationData?.selfieUrl ||
+                  (userData.name?.toLowerCase().includes('frank') ? FRANK_AVATAR_BASE64 : undefined);
 
                 return (
-                  <div className="bg-gradient-to-r from-red-950 via-stone-900 to-amber-950 text-white rounded-2xl p-5 sm:p-6 shadow-xs border border-stone-800">
-                    <div className="flex items-center gap-4 sm:gap-5">
-                      {/* User Image ID with Professional Luxury Border Radius (Locked: Admin Only) */}
+                  <div className="bg-gradient-to-r from-red-950 via-stone-900 to-amber-950 text-white rounded-2xl p-4 sm:p-6 shadow-xs border border-stone-800">
+                    <div className="flex items-center gap-3.5 sm:gap-5">
+                      {/* User Image ID with Professional Luxury Border Radius */}
                       <UserProfileAvatar
                         src={userImg}
                         name={userData.name}
@@ -924,16 +965,16 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                         onEditClick={() => setShowPhotoLockNotice(true)}
                       />
 
-                      <div className="space-y-1">
+                      <div className="space-y-1.5 flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="bg-[#ffcc00] text-stone-900 font-bold text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          <span className="bg-[#ffcc00] text-stone-900 font-bold text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
                             Verified Account Holder
                           </span>
-                          <span className="text-[11px] text-stone-300 font-mono">
-                            Routing: 061000227 • Everyday Checking {primaryChecking?.accountNumber || '..0987'}
+                          <span className="text-[11px] text-stone-300 font-mono break-words">
+                            Routing: 061000227 • Everyday Checking {primaryChecking?.accountNumber || '..5776'}
                           </span>
                         </div>
-                        <h2 className="font-serif text-2xl sm:text-3xl text-white font-normal">
+                        <h2 className="font-serif text-xl sm:text-2xl md:text-3xl text-white font-normal break-words leading-tight">
                           {greeting}, {userData.name}!
                         </h2>
                         <p className="text-xs text-stone-300 max-w-xl leading-relaxed">

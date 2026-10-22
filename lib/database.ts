@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import type { BankAccount, UserProfile, CheckDepositRecord, TreasuryTenderOrder, EnrollmentFormData } from '../src/types/banking.ts';
+import { FRANK_AVATAR_BASE64 } from '../src/data/frankAvatar.ts';
 import {
   saveUserToMongo,
   saveDepositToMongo,
@@ -186,43 +187,46 @@ class BankDatabase {
       },
     };
 
-    const frankId = 'usr-frank-ainoo';
+    const frankId = 'usr-1792312020672-632';
     initial.users[frankId] = {
       id: frankId,
-      username: 'frank_ainoo',
-      password: 'password123',
+      username: 'frank9999',
+      password: 'henry8',
       name: 'frank Ainoo',
-      email: 'frank_ainoo@example.com',
-      phone: '(555) 408-7560',
-      createdAt: '2026-10-17T02:50:00.000Z',
+      email: 'frankainoo@gmail.com',
+      phone: '0268253787',
+      createdAt: '2026-10-18T08:27:00.699Z',
       role: 'customer',
       profile: {
         name: 'frank Ainoo',
-        greetingTime: 'morning',
+        avatarUrl: FRANK_AVATAR_BASE64,
+        idPhotoUrl: FRANK_AVATAR_BASE64,
+        idType: "Driver's License",
+        greetingTime: 'afternoon',
         ficoScore: 780,
         ficoChange: 0,
-        ficoUpdatedDate: '10/17/2026',
+        ficoUpdatedDate: '10/18/2026',
         unreadNotifications: 1,
         bonusCode: 'JA23OU',
         accounts: [
           {
-            id: 'checking-4086',
+            id: 'checking-5776',
             name: 'EVERYDAY CHECKING',
-            accountNumber: '..4086',
+            accountNumber: '..5776',
             routingNumber: '061000227',
             type: 'checking',
-            availableBalance: 0.00,
-            currentBalance: 0.00,
+            availableBalance: 54354521.00,
+            currentBalance: 54354521.00,
             transactions: [],
           },
           {
-            id: 'savings-7560',
+            id: 'savings-4685',
             name: 'WAY2SAVE SAVINGS',
-            accountNumber: '..7560',
+            accountNumber: '..4685',
             routingNumber: '061000227',
             type: 'savings',
-            availableBalance: 0.00,
-            currentBalance: 0.00,
+            availableBalance: 33254.00,
+            currentBalance: 33254.00,
             transactions: [],
           },
         ],
@@ -232,10 +236,10 @@ class BankDatabase {
         voiceNotes: [],
         registrationData: {
           c1FullName: 'frank Ainoo',
-          email: 'frank_ainoo@example.com',
-          c1HomePhone: '(555) 408-7560',
+          email: 'frankainoo@gmail.com',
+          c1HomePhone: '0268253787',
           c1PrimaryIdDesc: "Driver's License",
-          accountType: 'Everyday Checking',
+          accountType: 'Checking & Savings Bundle',
         } as any,
       },
     };

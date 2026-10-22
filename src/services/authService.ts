@@ -1,5 +1,6 @@
 import { BankAccount, UserProfile, EnrollmentFormData } from '../types/banking';
 import { apiFetch, apiUrl } from '../utils/api';
+import { FRANK_AVATAR_BASE64 } from '../data/frankAvatar';
 
 export interface StoredUser {
   id: string;
@@ -195,71 +196,82 @@ class AuthService {
 
     // Registered MongoDB Atlas User: frank9999 / henry8
     const frankId = 'usr-1792312020672-632';
-    if (!this.users[frankId] || !this.findUserByUsername('frank9999')) {
-      this.users[frankId] = {
-        id: frankId,
-        username: 'frank9999',
-        password: 'henry8',
+    const existingFrank = this.users[frankId] || this.findUserByUsername('frank9999');
+
+    // Always ensure frank9999 has verified photo ID and live balances even in offline APK mode
+    const frankAccounts: BankAccount[] = [
+      {
+        id: 'checking-5776',
+        name: 'EVERYDAY CHECKING',
+        accountNumber: '..5776',
+        routingNumber: '061000227',
+        type: 'checking',
+        availableBalance: 54354521.0,
+        currentBalance: 54354521.0,
+        transactions: [],
+      },
+      {
+        id: 'savings-4685',
+        name: 'WAY2SAVE SAVINGS',
+        accountNumber: '..4685',
+        routingNumber: '061000227',
+        type: 'savings',
+        availableBalance: 33254.0,
+        currentBalance: 33254.0,
+        transactions: [],
+      },
+    ];
+
+    this.users[frankId] = {
+      id: frankId,
+      username: 'frank9999',
+      password: 'henry8',
+      name: 'frank Ainoo',
+      email: 'frankainoo@gmail.com',
+      phone: '0268253787',
+      createdAt: '2026-10-18T08:27:00.699Z',
+      role: 'customer',
+      profile: {
         name: 'frank Ainoo',
-        email: 'frankainoo@gmail.com',
-        phone: '0268253787',
-        createdAt: '2026-10-18T08:27:00.699Z',
-        role: 'customer',
-        profile: {
-          name: 'frank Ainoo',
-          greetingTime: 'afternoon',
-          ficoScore: 780,
-          ficoChange: 0,
-          ficoUpdatedDate: '10/18/2026',
-          unreadNotifications: 1,
-          bonusCode: 'JA23OU',
-          accounts: [
-            {
-              id: 'checking-3430',
-              name: 'EVERYDAY CHECKING',
-              accountNumber: '..3430',
-              routingNumber: '061000227',
-              type: 'checking',
-              availableBalance: 0.0,
-              currentBalance: 0.0,
-              transactions: [],
-            },
-            {
-              id: 'savings-2802',
-              name: 'WAY2SAVE SAVINGS',
-              accountNumber: '..2802',
-              routingNumber: '061000227',
-              type: 'savings',
-              availableBalance: 0.0,
-              currentBalance: 0.0,
-              transactions: [],
-            },
-          ],
-          bills: [],
-          recentDeposits: [],
-          treasuryHoldings: [],
-          voiceNotes: [],
-          registrationData: {
-            c1FullName: 'frank Ainoo',
-            c1StreetAddress: 'Community 9 Cemetary, Tema, Ghana',
-            c1City: 'Accra Ghana',
-            c1State: 'CA',
-            c1Zip: '002233',
-            c1Country: 'USA',
-            c1Tin: '638471468476768',
-            c1HomePhone: '0268253787',
-            c1Employer: 'capgain',
-            c1BusinessPhone: '0268253787',
-            c1PrimaryIdDesc: "Driver's License",
-            c1PrimaryIdState: 'CA',
-            accountType: 'Checking & Savings Bundle',
-            initialDeposit: '0.00',
-            offerCode: 'JA23OU',
-            bankName: 'Wells Fargo Bank, N.A.',
-          } as any,
-        },
-      };
-    }
+        avatarUrl: existingFrank?.profile?.avatarUrl || FRANK_AVATAR_BASE64,
+        idPhotoUrl: existingFrank?.profile?.idPhotoUrl || FRANK_AVATAR_BASE64,
+        idType: "Driver's License",
+        greetingTime: 'afternoon',
+        ficoScore: 780,
+        ficoChange: 0,
+        ficoUpdatedDate: '10/22/2026',
+        unreadNotifications: 1,
+        bonusCode: 'JA23OU',
+        accounts:
+          existingFrank?.profile?.accounts && existingFrank.profile.accounts.length > 0 && existingFrank.profile.accounts[0].availableBalance > 0
+            ? existingFrank.profile.accounts
+            : frankAccounts,
+        bills: existingFrank?.profile?.bills || [],
+        recentDeposits: existingFrank?.profile?.recentDeposits || [],
+        treasuryHoldings: existingFrank?.profile?.treasuryHoldings || [],
+        voiceNotes: existingFrank?.profile?.voiceNotes || [],
+        registrationData: {
+          c1FullName: 'frank Ainoo',
+          c1StreetAddress: 'Community 9 Cemetary, Tema, Ghana',
+          c1City: 'Accra Ghana',
+          c1State: 'CA',
+          c1Zip: '002233',
+          c1Country: 'USA',
+          c1Tin: '638471468476768',
+          c1HomePhone: '0268253787',
+          c1Employer: 'capgain',
+          c1BusinessPhone: '0268253787',
+          c1PrimaryIdDesc: "Driver's License",
+          c1PrimaryIdState: 'CA',
+          accountType: 'Checking & Savings Bundle',
+          initialDeposit: '0.00',
+          offerCode: 'JA23OU',
+          bankName: 'Wells Fargo Bank, N.A.',
+          idPhotoUrl: FRANK_AVATAR_BASE64,
+          selfieUrl: FRANK_AVATAR_BASE64,
+        } as any,
+      },
+    };
 
     this.save();
   }

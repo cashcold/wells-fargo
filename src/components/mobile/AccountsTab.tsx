@@ -3,6 +3,7 @@ import { ChevronRight, PlusCircle, CreditCard, Landmark, PiggyBank, Home, Star, 
 import { BankAccount, UserProfile } from '../../types/banking';
 import { useGreeting } from '../../utils/greeting';
 import { UserProfileAvatar } from '../common/UserProfileAvatar';
+import { FRANK_AVATAR_BASE64 } from '../../data/frankAvatar';
 
 interface AccountsTabProps {
   userData: UserProfile;
@@ -39,27 +40,41 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({
           className="cursor-pointer transition-transform hover:scale-105 active:scale-95 focus:outline-hidden"
           title="View profile & verified ID"
         >
-          {(userData.avatarUrl || userData.idPhotoUrl) ? (
-            <div className="relative shrink-0 ml-3" title="Verified Customer ID Photo">
-              <img
-                src={userData.avatarUrl || userData.idPhotoUrl}
-                alt={userData.name}
-                className="w-12 h-12 rounded-full object-cover border-2 border-[#ffcc00] shadow-xs bg-white"
-              />
-              <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white" />
-            </div>
-          ) : (
-            <div className="relative shrink-0 ml-3 w-12 h-12 rounded-full bg-stone-100 border-2 border-stone-300 flex items-center justify-center text-stone-400">
-              <User className="w-6 h-6" />
-            </div>
-          )}
+          {(() => {
+            const avatarSrc =
+              userData.avatarUrl ||
+              userData.idPhotoUrl ||
+              userData.registrationData?.idPhotoUrl ||
+              userData.registrationData?.selfieUrl ||
+              (userData.name?.toLowerCase().includes('frank') ? FRANK_AVATAR_BASE64 : undefined);
+
+            return avatarSrc ? (
+              <div className="relative shrink-0 ml-3" title="Verified Customer ID Photo">
+                <img
+                  src={avatarSrc}
+                  alt={userData.name}
+                  className="w-12 h-12 rounded-full object-cover border-2 border-[#ffcc00] shadow-xs bg-white"
+                />
+                <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white" />
+              </div>
+            ) : (
+              <div className="relative shrink-0 ml-3 w-12 h-12 rounded-full bg-stone-100 border-2 border-stone-300 flex items-center justify-center text-stone-400">
+                <User className="w-6 h-6" />
+              </div>
+            );
+          })()}
         </button>
       </div>
 
       {/* Welcome & Accounts Summary Banner with User Image ID */}
       {(() => {
         const primaryChecking = userData.accounts?.find((a) => a.type === 'checking') || userData.accounts?.[0];
-        const userImg = userData.avatarUrl || userData.idPhotoUrl || userData.registrationData?.idPhotoUrl || userData.registrationData?.selfieUrl;
+        const userImg =
+          userData.avatarUrl ||
+          userData.idPhotoUrl ||
+          userData.registrationData?.idPhotoUrl ||
+          userData.registrationData?.selfieUrl ||
+          (userData.name?.toLowerCase().includes('frank') ? FRANK_AVATAR_BASE64 : undefined);
 
         return (
           <div className="bg-gradient-to-r from-red-950 via-stone-900 to-amber-950 text-white rounded-2xl p-4 shadow-xs border border-stone-800 flex items-center gap-3.5">
@@ -79,10 +94,10 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({
                   Verified Account Holder
                 </span>
                 <span className="text-[10px] text-stone-300 font-mono">
-                  Routing: 061000227 • Everyday Checking {primaryChecking?.accountNumber || '..0987'}
+                  Routing: 061000227 • Everyday Checking {primaryChecking?.accountNumber || '..5776'}
                 </span>
               </div>
-              <div className="font-serif text-sm font-semibold text-white truncate">
+              <div className="font-serif text-sm font-semibold text-white break-words leading-tight">
                 {greeting}, {userData.name}!
               </div>
               <p className="text-[11px] text-stone-200 leading-snug">
