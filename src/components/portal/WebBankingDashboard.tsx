@@ -562,13 +562,13 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                 <span>My Registration Info</span>
               </button>
 
-              {/* Link to Wells Fargo Homepage - Visible on Mobile and Desktop */}
+              {/* Link to Wells Fargo Homepage - Hidden on mobile view, visible on md+ screens */}
               <button
                 onClick={onOpenPublicPortal}
-                className="inline-flex items-center gap-1 text-[11px] sm:text-xs text-white/90 hover:text-white bg-black/15 hover:bg-black/25 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded transition-colors font-medium shrink-0"
+                className="hidden md:inline-flex items-center gap-1 text-xs text-white/90 hover:text-white bg-black/15 hover:bg-black/25 px-2.5 py-1.5 rounded transition-colors font-medium shrink-0"
                 title="Visit WellsFargo.com Public Home"
               >
-                <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#ffcc00]" />
+                <ExternalLink className="w-3.5 h-3.5 text-[#ffcc00]" />
                 <span>WellsFargo.com</span>
               </button>
 
