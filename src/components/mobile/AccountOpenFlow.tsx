@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Check, ArrowRight, FileText, Printer, CheckCircle, ShieldCheck } from 'lucide-react';
 import { SignatureCardModal } from '../portal/SignatureCardModal';
+import { downloadSignatureCardPdf } from '../../utils/pdfGenerator';
 
 interface AccountOpenFlowProps {
   onContinue: () => void;
@@ -45,11 +46,16 @@ export const AccountOpenFlow: React.FC<AccountOpenFlowProps> = ({ onContinue, cu
 
           <div className="text-right">
             <button
-              onClick={() => window.print()}
-              className="text-xs text-[#2853a8] hover:underline inline-flex items-center gap-1 font-medium"
+              onClick={() => {
+                downloadSignatureCardPdf({ c1FullName: customerName, accountType: 'Wells Fargo Everyday Checking' } as any, customerName);
+                try {
+                  window.print();
+                } catch (e) {}
+              }}
+              className="text-xs text-[#2853a8] hover:underline inline-flex items-center gap-1 font-medium cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Save or Print Page</span>
+              <span>Print / Save as PDF</span>
             </button>
           </div>
 

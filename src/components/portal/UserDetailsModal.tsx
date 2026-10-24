@@ -270,12 +270,17 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
             </button>
 
             <button
-              onClick={() => window.print()}
+              onClick={() => {
+                downloadSignatureCardPdf(reg, userData.name);
+                try {
+                  window.print();
+                } catch (e) {}
+              }}
               className="p-1.5 hover:bg-black/20 rounded text-white flex items-center gap-1 text-xs transition-colors"
-              title="Print Profile Details"
+              title="Print or Save Profile Details as PDF"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Print</span>
+              <span className="hidden sm:inline">Print / Save as PDF</span>
             </button>
 
             <button

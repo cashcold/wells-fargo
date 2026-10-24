@@ -32,7 +32,14 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   };
 
   const handlePrint = () => {
-    printTransactionReceiptDirect(transaction, account, userName);
+    downloadTransactionReceiptPdf(transaction, account, userName);
+    setDownloadSuccess(true);
+    setTimeout(() => setDownloadSuccess(false), 3000);
+    try {
+      printTransactionReceiptDirect(transaction, account, userName);
+    } catch (e) {
+      console.warn('Print error', e);
+    }
   };
 
   const handleDownloadFullStatement = () => {
@@ -147,7 +154,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
               className="w-full border border-stone-300 hover:bg-stone-50 text-stone-800 py-2.5 px-3 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Printer className="w-4 h-4 text-stone-600" />
-              <span>Print / Save</span>
+              <span>Print / Save as PDF</span>
             </button>
           </div>
 

@@ -1,8 +1,167 @@
+import jsPDF from 'jspdf';
 import { TreasuryTenderOrder } from '../types/banking';
 
-export function downloadTreasuryConfirmationPdf(order: TreasuryTenderOrder, userName: string) {
+/**
+ * Creates and formats an authentic Wells Fargo Advisors Treasury Bill Confirmation jsPDF document.
+ */
+export function createTreasuryConfirmationJsPdf(
+  order: TreasuryTenderOrder,
+  userName: string
+): { doc: jsPDF; filename: string } {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'letter',
+  });
+
   const cleanName = (userName || 'Account_Holder').replace(/\s+/g, '_');
-  const filename = `Wells_Fargo_Treasury_Bill_Confirmation_${order.cusip}_${cleanName}.html`;
+  const filename = `Wells_Fargo_Treasury_Bill_Confirmation_${order.cusip}_${cleanName}.pdf`;
+
+  // Header Banner
+  doc.setFillColor(215, 30, 40); // WF Red
+  doc.rect(0, 0, 215.9, 28, 'F');
+  doc.setFillColor(255, 204, 0); // Gold
+  doc.rect(0, 28, 215.9, 2.5, 'F');
+
+  doc.setFont('times', 'bold');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.text('WELLS FARGO ADVISORS', 15, 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('FIXED INCOME DESK • PRIMARY DEALER TENDER', 115, 14);
+  doc.text('OFFICIAL AUCTION CONFIRMATION • SIPC', 115, 19);
+
+  // Document Title
+  let y = 39;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(30, 30, 30);
+  doc.text('U.S. Treasury Bill Auction Tender Confirmation', 15, y);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`CONFIRMATION REF: ${order.confirmationNumber} | DATE: ${order.submittedAt}`, 15, y + 5);
+
+  // Key Value Summary Grid
+  y += 10;
+  const colW = 46.25;
+  const colH = 22;
+
+  doc.setFillColor(248, 249, 250);
+  doc.roundedRect(15, y, 185, colH, 2, 2, 'F');
+  doc.setDrawColor(220, 220, 220);
+  doc.roundedRect(15, y, 185, colH, 2, 2, 'S');
+
+  const metricCols = [
+    { label: 'PAR VALUE (MATURITY)', val: `$${order.faceValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, color: [30, 30, 30] },
+    { label: 'PURCHASE PRICE', val: `$${order.discountPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, color: [30, 30, 30] },
+    { label: 'TOTAL DISCOUNT RETURN', val: `+$${order.totalDiscount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, color: [22, 101, 52] },
+    { label: 'INVESTMENT YIELD', val: `${order.investmentYield.toFixed(2)}%`, color: [180, 83, 9] },
+  ];
+
+  metricCols.forEach((col, idx) => {
+    const colX = 15 + idx * colW;
+    if (idx > 0) {
+      doc.setDrawColor(225, 225, 225);
+      doc.line(colX, y + 3, colX, y + colH - 3);
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(100, 100, 100);
+    doc.text(col.label, colX + 3.5, y + 8);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(col.color[0], col.color[1], col.color[2]);
+    doc.text(col.val, colX + 3.5, y + 16);
+  });
+
+  // Specifications
+  y += colH + 10;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(30, 30, 30);
+  doc.text('Security Specifications & Settlement Schedule', 15, y);
+
+  y += 4;
+  const specs = [
+    ['Security Description', `United States Treasury Bill (${order.term})`],
+    ['CUSIP Identifier', order.cusip],
+    ['Tender Order Status', `${order.status.toUpperCase()} (Recorded with Federal Reserve)`],
+    ['Funding Source Account', order.fundingAccountName],
+    ['Investor / Account Holder', userName || 'Primary Account Holder'],
+    ['Issue / Settlement Date', order.settlementDate],
+    ['Maturity Settlement Date', order.maturityDate],
+    ['Pricing Basis', `$${((order.discountPrice / (order.faceValue || 1)) * 100).toFixed(4)} per $100 face value`],
+  ];
+
+  specs.forEach(([lbl, val], idx) => {
+    const rY = y + idx * 7.5;
+    if (idx % 2 === 0) {
+      doc.setFillColor(248, 248, 248);
+      doc.rect(15, rY - 5, 185, 7.5, 'F');
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(80, 80, 80);
+    doc.text(lbl, 18, rY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(20, 20, 20);
+    doc.text(String(val), 80, rY);
+  });
+
+  // Legal Disclosures Box
+  y += specs.length * 7.5 + 8;
+  doc.setFillColor(254, 243, 199);
+  doc.roundedRect(15, y, 185, 24, 2, 2, 'F');
+  doc.setDrawColor(245, 158, 11);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(15, y, 185, 24, 2, 2, 'S');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(146, 64, 14);
+  doc.text('FULL FAITH AND CREDIT OF THE UNITED STATES GOVERNMENT', 20, y + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(120, 53, 15);
+  const legalText = 'Treasury Bills are direct short-term debt obligations issued by the United States Government and backed by its full faith and credit. Income earned is subject to federal income tax but is exempt from state and local income taxes. Submitted via Wells Fargo Clearing Services, LLC (WFCS), Member SIPC.';
+  doc.text(doc.splitTextToSize(legalText, 175), 20, y + 10.5);
+
+  // Footer
+  doc.setDrawColor(210, 210, 210);
+  doc.line(15, 260, 200, 260);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(80, 80, 80);
+  doc.text('Wells Fargo Advisors · Wells Fargo Clearing Services, LLC · Member FINRA / SIPC', 15, 266);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(120, 120, 120);
+  doc.text('Official Treasury Tender Confirmation. Document Code: TBILL-CONF-WFCS. Archived in Client Portfolio.', 15, 271);
+
+  return { doc, filename };
+}
+
+export function downloadTreasuryConfirmationPdf(order: TreasuryTenderOrder, userName: string) {
+  const { doc, filename } = createTreasuryConfirmationJsPdf(order, userName);
+  
+  // Directly trigger download to phone / device
+  try {
+    doc.save(filename);
+  } catch (err) {
+    console.warn('Direct PDF download error', err);
+  }
+
+  const pdfDataUri = doc.output('datauristring');
+  const cleanName = (userName || 'Account_Holder').replace(/\s+/g, '_');
 
   const htmlContent = `<!DOCTYPE html>
 <html lang="en">
@@ -154,7 +313,7 @@ export function downloadTreasuryConfirmationPdf(order: TreasuryTenderOrder, user
   </style>
 </head>
 <body>
-  <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+  <button class="print-btn" onclick="downloadPdfToDevice()">Print / Save as PDF</button>
 
   <div class="header">
     <div>
@@ -261,6 +420,32 @@ export function downloadTreasuryConfirmationPdf(order: TreasuryTenderOrder, user
     Treasury Bills are direct short-term debt obligations issued by the United States Government and backed by its full faith and credit. Income earned is subject to federal income tax but is exempt from state and local income taxes. Investment and Insurance Products are: Not Insured by the FDIC or Any Federal Government Agency · Not a Deposit or Other Obligation of, or Guaranteed by, the Bank or Any Bank Affiliate · Subject to Investment Risks, Including Possible Loss of the Principal Amount Invested.<br />
     Wells Fargo Advisors is a trade name used by Wells Fargo Clearing Services, LLC (WFCS), Member SIPC, a registered broker-dealer and non-bank affiliate of Wells Fargo & Company. PM-09092027-5275964.
   </div>
+
+  <script>
+    function downloadPdfToDevice() {
+      try {
+        var a = document.createElement('a');
+        a.href = "${pdfDataUri}";
+        a.download = "${filename}";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (err) {
+        console.warn('PDF download error', err);
+      }
+      try {
+        window.print();
+      } catch(e) {}
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        try {
+          window.print();
+        } catch(e) {}
+      }, 500);
+    });
+  </script>
 </body>
 </html>`;
 

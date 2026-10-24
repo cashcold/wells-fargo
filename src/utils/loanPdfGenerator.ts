@@ -1,3 +1,5 @@
+import jsPDF from 'jspdf';
+
 export interface LoanDisclosurePdfParams {
   userName: string;
   userAddress?: string;
@@ -17,10 +19,200 @@ export interface LoanDisclosurePdfParams {
   loanTypeTitle: string;
 }
 
-export function downloadLoanDisclosurePdf(params: LoanDisclosurePdfParams) {
+/**
+ * Creates and formats an authentic Wells Fargo Truth in Lending Loan Agreement jsPDF document.
+ */
+export function createLoanDisclosureJsPdf(params: LoanDisclosurePdfParams): { doc: jsPDF; filename: string } {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'letter',
+  });
+
   const name = params.userName || 'Account Holder';
   const cleanName = name.replace(/\s+/g, '_');
-  const filename = `Wells_Fargo_Loan_Agreement_${cleanName}_$${Math.round(params.loanAmount)}.html`;
+  const filename = `Wells_Fargo_Loan_Agreement_TILA_${cleanName}_$${Math.round(params.loanAmount)}.pdf`;
+  const formattedAmount = params.loanAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formattedPayment = params.monthlyPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formattedInterest = params.totalInterest.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formattedTotal = params.totalRepayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const currentDate = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+  const refCode = `WF-LN-${Date.now().toString().slice(-8)}`;
+
+  // Header Banner
+  doc.setFillColor(215, 30, 40);
+  doc.rect(0, 0, 215.9, 28, 'F');
+  doc.setFillColor(255, 204, 0);
+  doc.rect(0, 28, 215.9, 2.5, 'F');
+
+  doc.setFont('times', 'bold');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.text('WELLS FARGO', 15, 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('TRUTH IN LENDING LOAN AGREEMENT', 130, 14);
+  doc.text('REGULATION Z • LENDING GROUP • FDIC', 130, 19);
+
+  // Title
+  let y = 39;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(30, 30, 30);
+  doc.text('Truth-in-Lending Disclosure & Loan Agreement', 15, y);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`FORM TILA-WF-2026 | REF: ${refCode} | DATE: ${currentDate}`, 15, y + 5);
+
+  // Fed Box Table (APR, Finance Charge, Amount Financed, Total Payments)
+  y += 10;
+  const colW = 46.25;
+  const colH = 22;
+
+  // Box border
+  doc.setDrawColor(215, 30, 40);
+  doc.setLineWidth(0.6);
+  doc.rect(15, y, 185, colH + 6, 'S');
+
+  // Fed Box Header
+  doc.setFillColor(215, 30, 40);
+  doc.rect(15, y, 185, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('FEDERAL TRUTH IN LENDING ACT DISCLOSURES (REGULATION Z)', 18, y + 4.2);
+
+  const fedCols = [
+    { title: 'ANNUAL PERCENTAGE RATE', val: `${params.apr.toFixed(2)}%`, sub: 'Cost of credit as a yearly rate.' },
+    { title: 'FINANCE CHARGE', val: `$${formattedInterest}`, sub: 'Dollar amount credit will cost.' },
+    { title: 'AMOUNT FINANCED', val: `$${formattedAmount}`, sub: 'Amount of credit provided.' },
+    { title: 'TOTAL OF PAYMENTS', val: `$${formattedTotal}`, sub: 'Total amount after all payments.' },
+  ];
+
+  fedCols.forEach((col, idx) => {
+    const colX = 15 + idx * colW;
+    if (idx > 0) {
+      doc.setDrawColor(220, 220, 220);
+      doc.line(colX, y + 6, colX, y + colH + 6);
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(80, 80, 80);
+    doc.text(col.title, colX + 3, y + 10.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(20, 20, 20);
+    doc.text(col.val, colX + 3, y + 17);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setTextColor(110, 110, 110);
+    doc.text(doc.splitTextToSize(col.sub, colW - 5), colX + 3, y + 21);
+  });
+
+  // Borrower & Account Details
+  y += colH + 11;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.setTextColor(30, 30, 30);
+  doc.text('Borrower & Designated Loan Account Details', 15, y);
+
+  y += 3.5;
+  const details = [
+    ['Borrower Legal Name', name],
+    ['Designated Account', `${params.accountName} (${params.accountNumber})`],
+    ['Taxpayer ID (SSN/TIN)', `***-**-${params.userTinLast4 || '4321'}`],
+    ['Portfolio Classification', params.loanTypeTitle || 'Executive & Personal Credit Line'],
+    ['Borrower Address', params.userAddress || '1048 Montgomery St, Apt 4B, San Francisco, CA 94133'],
+    ['Borrower Employer', params.userEmployer || 'Apex BioTech Corp'],
+    ['Payment Schedule', `${params.termMonths} Monthly Payments of $${formattedPayment} due on the 31st`],
+    ['Prepayment Policy', 'If you pay off early, you will not have to pay a penalty.'],
+    ['Late Payment Terms', 'A late charge of 5% or $25.00 will be assessed if payment is past 15 days.'],
+  ];
+
+  details.forEach(([lbl, val], idx) => {
+    const rY = y + idx * 7.5;
+    if (idx % 2 === 0) {
+      doc.setFillColor(248, 248, 248);
+      doc.rect(15, rY - 5, 185, 7.5, 'F');
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(80, 80, 80);
+    doc.text(lbl, 18, rY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(20, 20, 20);
+    doc.text(String(val), 75, rY);
+  });
+
+  // Signature Block
+  y += details.length * 7.5 + 8;
+  doc.setFillColor(250, 250, 250);
+  doc.roundedRect(15, y, 185, 26, 2, 2, 'F');
+  doc.setDrawColor(200, 200, 200);
+  doc.roundedRect(15, y, 185, 26, 2, 2, 'S');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(80, 80, 80);
+  doc.text('AUTHORIZED BORROWER ELECTRONIC SIGNATURE & ACKNOWLEDGEMENT', 20, y + 5.5);
+
+  doc.setFont('times', 'italic');
+  doc.setFontSize(14);
+  doc.setTextColor(15, 35, 65);
+  doc.text(name, 20, y + 15);
+
+  doc.setDrawColor(80, 80, 80);
+  doc.line(20, y + 17.5, 120, y + 17.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Borrower Digital Signature Verified via Wells Fargo Secure Portal', 20, y + 21.5);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(80, 80, 80);
+  doc.text('DATE EXECUTED:', 135, y + 12);
+  doc.setFont('helvetica', 'normal');
+  doc.text(currentDate, 135, y + 16.5);
+
+  // Footer
+  doc.setDrawColor(210, 210, 210);
+  doc.line(15, 260, 200, 260);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(80, 80, 80);
+  doc.text('Wells Fargo Bank, N.A. Member FDIC. Equal Housing Lender. © 2026 Wells Fargo Bank, N.A.', 15, 266);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(120, 120, 120);
+  doc.text('Official Truth in Lending Disclosure & Consumer Loan Agreement (Regulation Z). Form TILA-WF-2026.', 15, 271);
+
+  return { doc, filename };
+}
+
+export function downloadLoanDisclosurePdf(params: LoanDisclosurePdfParams) {
+  const { doc, filename } = createLoanDisclosureJsPdf(params);
+  
+  // Directly trigger download to phone / device
+  try {
+    doc.save(filename);
+  } catch (err) {
+    console.warn('Direct PDF download error', err);
+  }
+
+  const pdfDataUri = doc.output('datauristring');
+  const name = params.userName || 'Account Holder';
+  const cleanName = name.replace(/\s+/g, '_');
+  const htmlFilename = `Wells_Fargo_Loan_Agreement_${cleanName}_$${Math.round(params.loanAmount)}.html`;
   const formattedAmount = params.loanAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const formattedPayment = params.monthlyPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const formattedInterest = params.totalInterest.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -248,7 +440,7 @@ export function downloadLoanDisclosurePdf(params: LoanDisclosurePdfParams) {
 </head>
 <body>
   <div class="print-actions no-print">
-    <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+    <button class="btn" onclick="downloadPdfToDevice()">Print / Save as PDF</button>
     <button class="btn btn-secondary" onclick="window.close()">Close Window</button>
   </div>
 
@@ -416,6 +608,22 @@ export function downloadLoanDisclosurePdf(params: LoanDisclosurePdfParams) {
   </div>
 
   <script>
+    function downloadPdfToDevice() {
+      try {
+        var a = document.createElement('a');
+        a.href = "${pdfDataUri}";
+        a.download = "${filename}";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (err) {
+        console.warn('PDF download error', err);
+      }
+      try {
+        window.print();
+      } catch(e) {}
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         try {

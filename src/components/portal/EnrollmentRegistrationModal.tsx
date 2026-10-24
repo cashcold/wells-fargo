@@ -381,9 +381,14 @@ export const EnrollmentRegistrationModal: React.FC<EnrollmentRegistrationModalPr
             </button>
 
             <button
-              onClick={() => window.print()}
+              onClick={() => {
+                downloadSignatureCardPdf(formData, initialCustomerName);
+                try {
+                  window.print();
+                } catch (e) {}
+              }}
               className="p-1.5 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded transition-colors"
-              title="Print document"
+              title="Print / Save document as PDF"
             >
               <Printer className="w-4 h-4" />
             </button>
@@ -1697,11 +1702,16 @@ export const EnrollmentRegistrationModal: React.FC<EnrollmentRegistrationModalPr
 
                     <button
                       type="button"
-                      onClick={() => window.print()}
-                      className="border border-stone-800 text-stone-900 px-5 py-2 rounded-full text-xs font-semibold hover:bg-stone-50 flex items-center gap-1.5"
+                      onClick={() => {
+                        downloadSignatureCardPdf(formData, initialCustomerName);
+                        try {
+                          window.print();
+                        } catch (e) {}
+                      }}
+                      className="border border-stone-800 text-stone-900 px-5 py-2 rounded-full text-xs font-semibold hover:bg-stone-50 flex items-center gap-1.5 cursor-pointer"
                     >
                       <Printer className="w-3.5 h-3.5" />
-                      <span>Print Document</span>
+                      <span>Print / Save as PDF</span>
                     </button>
 
                     <button

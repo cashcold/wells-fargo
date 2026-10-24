@@ -2,13 +2,13 @@ import jsPDF from 'jspdf';
 import { BankAccount, Transaction } from '../types/banking';
 
 /**
- * Generates and downloads an authentic Wells Fargo Transaction Receipt as a PDF file.
+ * Creates and formats an authentic Wells Fargo Transaction Receipt jsPDF instance.
  */
-export function downloadTransactionReceiptPdf(
+export function createTransactionReceiptJsPdf(
   tx: Transaction,
   account: BankAccount,
   userName: string
-) {
+): { doc: jsPDF; filename: string } {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -165,8 +165,19 @@ export function downloadTransactionReceiptPdf(
     271
   );
 
-  // Download PDF
   const filename = `Wells_Fargo_Transaction_Receipt_${tx.id}.pdf`;
+  return { doc, filename };
+}
+
+/**
+ * Generates and downloads an authentic Wells Fargo Transaction Receipt as a PDF file directly to the device.
+ */
+export function downloadTransactionReceiptPdf(
+  tx: Transaction,
+  account: BankAccount,
+  userName: string
+) {
+  const { doc, filename } = createTransactionReceiptJsPdf(tx, account, userName);
   doc.save(filename);
 }
 
@@ -398,6 +409,16 @@ export function printTransactionReceiptDirect(
   account: BankAccount,
   userName: string
 ) {
+  const { doc, filename } = createTransactionReceiptJsPdf(tx, account, userName);
+  
+  // Directly trigger download of the PDF file to the phone / device
+  try {
+    doc.save(filename);
+  } catch (err) {
+    console.warn('Direct PDF download error', err);
+  }
+
+  const pdfDataUri = doc.output('datauristring');
   const isCredit = tx.type === 'credit';
   const refNumber = `WF-${Math.abs(hashString(tx.id + tx.date)).toString().padStart(10, '0').slice(-10)}`;
   const cleanName = userName || 'Account Holder';
@@ -431,7 +452,7 @@ export function printTransactionReceiptDirect(
 </head>
 <body>
   <div class="no-print">
-    <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+    <button class="print-btn" onclick="downloadPdfToDevice()">Print / Save as PDF</button>
   </div>
   <div class="header">
     <div class="logo">WELLS FARGO</div>
@@ -471,6 +492,24 @@ export function printTransactionReceiptDirect(
       Wells Fargo Bank, N.A. Member FDIC. Equal Housing Lender. © 2026 Wells Fargo Bank, N.A.
     </div>
   </div>
+
+  <script>
+    function downloadPdfToDevice() {
+      try {
+        var a = document.createElement('a');
+        a.href = "${pdfDataUri}";
+        a.download = "${filename}";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (err) {
+        console.warn('Direct PDF download error', err);
+      }
+      try {
+        window.print();
+      } catch(e) {}
+    }
+  </script>
 </body>
 </html>`;
 

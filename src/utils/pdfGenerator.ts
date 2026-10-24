@@ -1,8 +1,184 @@
+import jsPDF from 'jspdf';
 import { EnrollmentFormData } from '../types/banking';
 
-export function downloadSignatureCardPdf(formData: EnrollmentFormData, customerName?: string) {
+/**
+ * Creates and formats an authentic Wells Fargo Signature Card (DSG8921) jsPDF document.
+ */
+export function createSignatureCardJsPdf(
+  formData: EnrollmentFormData,
+  customerName?: string
+): { doc: jsPDF; filename: string } {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'letter',
+  });
+
   const name = formData.c1FullName || customerName || 'Account Holder';
-  const filename = `Wells_Fargo_Signature_Card_DSG8921_${name.replace(/\s+/g, '_')}.html`;
+  const cleanName = name.replace(/\s+/g, '_');
+  const filename = `Wells_Fargo_Signature_Card_DSG8921_${cleanName}.pdf`;
+
+  // Header Banner
+  doc.setFillColor(215, 30, 40); // WF Red
+  doc.rect(0, 0, 215.9, 28, 'F');
+  doc.setFillColor(255, 204, 0); // Gold
+  doc.rect(0, 28, 215.9, 2.5, 'F');
+
+  doc.setFont('times', 'bold');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.text('WELLS FARGO', 15, 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('CONSUMER ACCOUNT APPLICATION (SIGNATURE CARD)', 115, 14);
+  doc.text('FORM DSG8921 • DEPOSIT PRODUCTS GROUP • FDIC', 115, 19);
+
+  // Document metadata
+  let y = 40;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(30, 30, 30);
+  doc.text('Consumer Account Application & Verified Signature Record', 15, y);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(100, 100, 100);
+  doc.text('FORM DSG8921 (02-07 105252) | ROUTING: 061000227 | ACCOUNT: .... 0987', 15, y + 5.5);
+  doc.text(`Generated: ${new Date().toLocaleDateString('en-US')}`, 145, y + 5.5);
+
+  // Divider
+  y += 10;
+  doc.setDrawColor(220, 220, 220);
+  doc.line(15, y, 200, y);
+
+  // Patriot Act box
+  y += 5;
+  doc.setFillColor(254, 243, 199);
+  doc.roundedRect(15, y, 185, 16, 2, 2, 'F');
+  doc.setDrawColor(245, 158, 11);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(15, y, 185, 16, 2, 2, 'S');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(146, 64, 14);
+  doc.text('IMPORTANT USA PATRIOT ACT NOTICE & IDENTITY VERIFICATION', 20, y + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(120, 53, 15);
+  const patriotText =
+    'Federal law requires all financial institutions to obtain, verify, and record information identifying each person opening an account. This record verifies legal identification, taxpayer TIN, and residential address in compliance with Federal banking laws.';
+  doc.text(doc.splitTextToSize(patriotText, 175), 20, y + 9.5);
+
+  // Account & Customer Data Tables
+  y += 22;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(30, 30, 30);
+  doc.text('Customer 1 Information (Primary Account Holder)', 15, y);
+
+  y += 4;
+  const fields = [
+    ['Full Legal Name', name],
+    ['Taxpayer ID (SSN / TIN)', formData.c1Tin ? `***-**-${formData.c1Tin.slice(-4)}` : '***-**-4321'],
+    ['Date of Birth', formData.c1Dob || '06/14/1992'],
+    ['Citizenship Country', formData.c1Country || 'United States of America (Citizen)'],
+    [
+      'Physical Residence',
+      `${formData.c1StreetAddress || '1048 Montgomery St, Apt 4B'}, ${formData.c1City || 'San Francisco'}, ${formData.c1State || 'CA'} ${formData.c1Zip || '94133'}`,
+    ],
+    ['Time at Residence', `${formData.c1HowLongYr || '3'} Years, ${formData.c1HowLongMo || '6'} Months`],
+    ['Primary Contact Phone', formData.c1HomePhone || '(415) 890-2134'],
+    ['Employer', formData.c1Employer || 'Apex BioTech Corp'],
+    [
+      'Primary Identification',
+      `${formData.c1PrimaryIdDesc || "Driver's License"} (${formData.c1PrimaryIdState || 'CA'}) Exp: ${formData.c1PrimaryExpDate || '10/2028'}`,
+    ],
+    [
+      'Account Product Selected',
+      `${formData.accountType || 'Wells Fargo Everyday Checking (JA23OU)'} (Initial Deposit: $${formData.initialDeposit || '100.00'})`,
+    ],
+  ];
+
+  fields.forEach(([lbl, val], i) => {
+    const rowY = y + i * 7.5;
+    if (i % 2 === 0) {
+      doc.setFillColor(248, 248, 248);
+      doc.rect(15, rowY - 5, 185, 7.5, 'F');
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(lbl, 18, rowY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(20, 20, 20);
+    doc.text(String(val), 80, rowY);
+  });
+
+  // Signature Block
+  y += fields.length * 7.5 + 10;
+  doc.setFillColor(250, 250, 250);
+  doc.roundedRect(15, y, 185, 32, 2, 2, 'F');
+  doc.setDrawColor(200, 200, 200);
+  doc.roundedRect(15, y, 185, 32, 2, 2, 'S');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(80, 80, 80);
+  doc.text('AUTHORIZED ACCOUNT SIGNATURE (FORM DSG8921)', 20, y + 6);
+
+  doc.setFont('times', 'italic');
+  doc.setFontSize(16);
+  doc.setTextColor(15, 35, 65);
+  doc.text(formData.c1Signature || name, 20, y + 18);
+
+  doc.setDrawColor(80, 80, 80);
+  doc.line(20, y + 21, 130, y + 21);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Customer 1 Digital Verified Signature', 20, y + 25.5);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(80, 80, 80);
+  doc.text('DATE SIGNED:', 140, y + 14);
+  doc.setFont('helvetica', 'normal');
+  doc.text(formData.c1SignatureDate || new Date().toLocaleDateString('en-US'), 140, y + 19);
+
+  // Footer Disclaimer
+  doc.setDrawColor(210, 210, 210);
+  doc.line(15, 260, 200, 260);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(80, 80, 80);
+  doc.text('Wells Fargo Bank, N.A. Member FDIC. Equal Housing Lender. © 2026 Wells Fargo Bank, N.A.', 15, 266);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(120, 120, 120);
+  doc.text('Document Code: DSG8921 (02-07 105252). Form archived in Wells Fargo Secure Cloud Banking Repository.', 15, 271);
+
+  return { doc, filename };
+}
+
+export function downloadSignatureCardPdf(formData: EnrollmentFormData, customerName?: string) {
+  const { doc, filename } = createSignatureCardJsPdf(formData, customerName);
+  
+  // Directly trigger PDF download to the phone / device
+  try {
+    doc.save(filename);
+  } catch (err) {
+    console.warn('Direct PDF download error', err);
+  }
+
+  const pdfDataUri = doc.output('datauristring');
+  const name = formData.c1FullName || customerName || 'Account Holder';
 
   const htmlContent = `<!DOCTYPE html>
 <html lang="en">
@@ -177,7 +353,7 @@ export function downloadSignatureCardPdf(formData: EnrollmentFormData, customerN
 </head>
 <body>
   <div class="print-actions no-print">
-    <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+    <button class="btn" onclick="downloadPdfToDevice()">Print / Save as PDF</button>
     <button class="btn btn-secondary" onclick="window.close()">Close Window</button>
   </div>
 
@@ -339,8 +515,24 @@ export function downloadSignatureCardPdf(formData: EnrollmentFormData, customerN
   </div>
 
   <script>
+    function downloadPdfToDevice() {
+      try {
+        var a = document.createElement('a');
+        a.href = "${pdfDataUri}";
+        a.download = "${filename}";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (err) {
+        console.warn('PDF download error', err);
+      }
+      try {
+        window.print();
+      } catch(e) {}
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
-      // Auto-trigger print preview for immediate save-as-pdf
+      // Auto-trigger print preview for immediate save-as-pdf if supported
       setTimeout(() => {
         try {
           window.print();
