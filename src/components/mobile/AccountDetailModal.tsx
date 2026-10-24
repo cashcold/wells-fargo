@@ -138,25 +138,25 @@ export const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
                     <div className="flex justify-between items-center text-stone-800">
                       <span>Payment due {account.nextPaymentDue || '10/31/2026'}</span>
                       <span className="font-semibold tabular-nums text-base">
-                        ${(account.nextPaymentAmount || 587.68).toFixed(2)}
+                        ${(account.nextPaymentAmount || 0).toFixed(2)}
                       </span>
                     </div>
 
                     <div className="flex justify-between items-center text-stone-600 text-xs pl-2 border-l-2 border-stone-200">
                       <span>Principal and interest</span>
-                      <span className="tabular-nums">${(account.principalAndInterest || 534.42).toFixed(2)}</span>
+                      <span className="tabular-nums">${(account.principalAndInterest || 0).toFixed(2)}</span>
                     </div>
 
                     <div className="flex justify-between items-center text-stone-600 text-xs pl-2 border-l-2 border-stone-200">
                       <span>Past due amount</span>
                       <span className="tabular-nums text-amber-700 font-medium">
-                        ${(account.pastDueAmount || 53.26).toFixed(2)}
+                        ${(account.pastDueAmount || 0).toFixed(2)}
                       </span>
                     </div>
 
                     <div className="pt-2 border-t border-stone-100 flex justify-between items-center text-stone-900 font-semibold">
                       <span>Total amount due</span>
-                      <span className="tabular-nums">${(account.totalAmountDue || 587.68).toFixed(2)}</span>
+                      <span className="tabular-nums">${(account.totalAmountDue || 0).toFixed(2)}</span>
                     </div>
 
                     <div className="flex justify-between items-center text-stone-600 text-xs pt-1">

@@ -237,23 +237,7 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
       transactions: [],
     };
   const creditAcc = userData.accounts.find((a) => a.type === 'credit') || null;
-  const loanAcc =
-    userData.accounts.find((a) => a.type === 'loan') || {
-      id: 'loan-5821',
-      name: 'WELLS FARGO AUTO & PERSONAL LOAN',
-      accountNumber: '..5821',
-      routingNumber: '061000227',
-      type: 'loan' as const,
-      availableBalance: 0,
-      principalBalance: 0,
-      nextPaymentDue: '10/31/2026',
-      nextPaymentAmount: 0,
-      principalAndInterest: 0,
-      pastDueAmount: 0,
-      totalAmountDue: 0,
-      autopayEnabled: false,
-      transactions: [],
-    };
+  const loanAcc = userData.accounts.find((a) => a.type === 'loan') || null;
 
   const totalLiquid = (checkingAcc?.availableBalance || 0) + (savingsAcc?.availableBalance || 0);
 
@@ -314,11 +298,14 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
     termMonths: number,
     apr: number
   ) => {
-    const updatedAccounts = userData.accounts.map((acc) => {
+    const hasLoan = userData.accounts.some((acc) => acc.id === accountId || acc.type === 'loan');
+    let updatedAccounts = userData.accounts.map((acc) => {
       if (acc.id === accountId || acc.type === 'loan') {
         return {
           ...acc,
+          availableBalance: newPrincipal,
           principalBalance: newPrincipal,
+          nextPaymentDue: acc.nextPaymentDue || '10/31/2026',
           nextPaymentAmount: monthlyPayment,
           principalAndInterest: monthlyPayment * 0.9,
           totalAmountDue: monthlyPayment,
@@ -337,6 +324,34 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
       }
       return acc;
     });
+
+    if (!hasLoan) {
+      updatedAccounts.push({
+        id: accountId || `loan-${Date.now()}`,
+        name: 'WELLS FARGO AUTO & PERSONAL LOAN',
+        accountNumber: '..5821',
+        routingNumber: '061000227',
+        type: 'loan' as const,
+        availableBalance: newPrincipal,
+        principalBalance: newPrincipal,
+        nextPaymentDue: '10/31/2026',
+        nextPaymentAmount: monthlyPayment,
+        principalAndInterest: monthlyPayment * 0.9,
+        pastDueAmount: 0,
+        totalAmountDue: monthlyPayment,
+        autopayEnabled: false,
+        transactions: [
+          {
+            id: `tx-loan-${Date.now()}`,
+            date: new Date().toLocaleDateString('en-US'),
+            description: `LOAN DISBURSEMENT - $${newPrincipal.toLocaleString('en-US', { maximumFractionDigits: 0 })} (${apr}% APR / ${termMonths} MO)`,
+            amount: newPrincipal,
+            type: 'credit' as const,
+            category: 'Transfers' as const,
+          },
+        ],
+      });
+    }
 
     onUpdateUserData({
       ...userData,
@@ -482,14 +497,13 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                 className="text-left focus:outline-none shrink-0"
                 title="Return to Wells Fargo Home"
               >
-                <WfLogo size="sm" variant="white" className="sm:hidden" />
-                <WfLogo size="md" variant="white" className="hidden sm:inline-flex" />
+                <WfLogo size="responsive" variant="white" />
               </button>
 
-              {/* User Avatar & Greeting - Visible on both Mobile Phone & Desktop */}
+              {/* User Avatar & Greeting - Hidden on mobile view, visible on md+ screens */}
               <div
                 onClick={() => setIsUserDetailsOpen(true)}
-                className="flex items-center gap-1.5 sm:gap-2 pl-1.5 sm:pl-3 border-l border-white/20 cursor-pointer hover:opacity-90 transition-opacity min-w-0"
+                className="hidden md:flex items-center gap-1.5 sm:gap-2 pl-1.5 sm:pl-3 border-l border-white/20 cursor-pointer hover:opacity-90 transition-opacity min-w-0"
                 title="View Account Profile & Verified ID"
               >
                 {(() => {
@@ -524,10 +538,10 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-              {/* View Registration & Profile Details Button */}
+              {/* View Registration & Profile Details Button - Hidden on mobile view */}
               <button
                 onClick={() => setIsUserDetailsOpen(true)}
-                className="inline-flex items-center gap-1 sm:gap-1.5 bg-black/25 hover:bg-black/35 text-white px-2 py-1.5 sm:px-2.5 rounded-full text-xs font-semibold transition-colors border border-white/20"
+                className="hidden md:inline-flex items-center gap-1 sm:gap-1.5 bg-black/25 hover:bg-black/35 text-white px-2 py-1.5 sm:px-2.5 rounded-full text-xs font-semibold transition-colors border border-white/20"
                 title="View registration information and profile details"
               >
                 {(() => {
@@ -545,48 +559,48 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                     <User className="w-3.5 h-3.5 text-amber-300 shrink-0" />
                   );
                 })()}
-                <span className="hidden sm:inline">My Registration Info</span>
+                <span>My Registration Info</span>
               </button>
 
-              {/* Link to Wells Fargo Homepage */}
+              {/* Link to Wells Fargo Homepage - Visible on Mobile and Desktop */}
               <button
                 onClick={onOpenPublicPortal}
-                className="hidden md:inline-flex items-center gap-1 text-xs text-white/90 hover:text-white bg-black/15 hover:bg-black/25 px-2.5 py-1.5 rounded transition-colors"
+                className="inline-flex items-center gap-1 text-[11px] sm:text-xs text-white/90 hover:text-white bg-black/15 hover:bg-black/25 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded transition-colors font-medium shrink-0"
                 title="Visit WellsFargo.com Public Home"
               >
-                <ExternalLink className="w-3.5 h-3.5 text-[#ffcc00]" />
+                <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#ffcc00]" />
                 <span>WellsFargo.com</span>
               </button>
 
-              {/* Ask Fargo Virtual Assistant button */}
+              {/* Ask Fargo Virtual Assistant button - Hidden on mobile view */}
               <button
                 onClick={onOpenAskFargo}
-                className="inline-flex items-center gap-1 sm:gap-1.5 bg-[#521375] hover:bg-[#681994] text-white px-2 py-1.5 sm:px-2.5 rounded-full text-xs font-semibold transition-colors shadow-2xs"
+                className="hidden md:inline-flex items-center gap-1 sm:gap-1.5 bg-[#521375] hover:bg-[#681994] text-white px-2 py-1.5 sm:px-2.5 rounded-full text-xs font-semibold transition-colors shadow-2xs"
                 title="Ask Fargo Virtual Assistant"
               >
                 <span className="w-4 h-4 rounded-full bg-white text-[#521375] flex items-center justify-center font-bold text-[10px]">
                   f
                 </span>
-                <span className="hidden sm:inline">Ask Fargo®</span>
+                <span>Ask Fargo®</span>
               </button>
 
               {/* Sign Off */}
               <button
                 onClick={onSignOff}
-                className="inline-flex items-center gap-1 text-xs font-bold text-white hover:text-stone-200 bg-black/25 hover:bg-black/35 px-2 sm:px-3 py-1.5 rounded transition-colors whitespace-nowrap"
+                className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-white hover:text-stone-200 bg-black/25 hover:bg-black/35 px-2 sm:px-3 py-1 sm:py-1.5 rounded transition-colors whitespace-nowrap"
                 title="Sign off your account"
               >
-                <Lock className="w-3.5 h-3.5" />
+                <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 <span className="hidden xs:inline">Sign Off</span>
               </button>
 
               {/* Hamburger Side Menu Toggle */}
               <button
                 onClick={() => setIsSideMenuOpen(!isSideMenuOpen)}
-                className="p-1.5 bg-[#a8131c] hover:bg-[#8e1017] rounded text-white transition-colors"
+                className="p-1 sm:p-1.5 bg-[#a8131c] hover:bg-[#8e1017] rounded text-white transition-colors shrink-0"
                 aria-label="Toggle Banking Menu"
               >
-                {isSideMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {isSideMenuOpen ? <X className="w-4 h-4 sm:w-5 sm:h-5" /> : <Menu className="w-4 h-4 sm:w-5 sm:h-5" />}
               </button>
             </div>
           </div>
@@ -1156,49 +1170,51 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
                 )}
               </div>
 
-              {/* Loans Account Group (matching aesqkbioflrf1.jpeg) */}
-              <div className="bg-white rounded-xl border border-stone-200 shadow-xs overflow-hidden">
-                <div className="bg-stone-50 px-5 py-3 border-b border-stone-200 flex items-center justify-between">
-                  <h3 className="font-bold text-sm text-stone-800 uppercase tracking-wider">
-                    Loans & Credit Lines
-                  </h3>
-                  <button
+              {/* Loans Account Group - Only shown if user has an active loan account */}
+              {loanAcc && (
+                <div className="bg-white rounded-xl border border-stone-200 shadow-xs overflow-hidden">
+                  <div className="bg-stone-50 px-5 py-3 border-b border-stone-200 flex items-center justify-between">
+                    <h3 className="font-bold text-sm text-stone-800 uppercase tracking-wider">
+                      Loans & Credit Lines
+                    </h3>
+                    <button
+                      onClick={() => setActiveTab('loans')}
+                      className="text-xs font-semibold text-[#d71e28] hover:underline cursor-pointer"
+                    >
+                      View Details & Make Payment &gt;
+                    </button>
+                  </div>
+
+                  <div
                     onClick={() => setActiveTab('loans')}
-                    className="text-xs font-semibold text-[#d71e28] hover:underline"
+                    className="p-5 hover:bg-stone-50/80 transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
                   >
-                    View Details & Make Payment &gt;
-                  </button>
-                </div>
-
-                <div
-                  onClick={() => setActiveTab('loans')}
-                  className="p-5 hover:bg-stone-50/80 transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
-                      <Landmark className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-stone-900 group-hover:text-[#d71e28] transition-colors">
-                          {loanAcc.name}
-                        </span>
-                        <span className="text-xs text-stone-500 font-mono font-medium">{loanAcc.accountNumber}</span>
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <Landmark className="w-5 h-5" />
                       </div>
-                      <span className="text-xs text-stone-500 block mt-0.5">
-                        Payment due 10/31/2026: ${(loanAcc.nextPaymentAmount || 587.68).toFixed(2)} • Autopay {loanAcc.autopayEnabled ? 'On' : 'Off'}
-                      </span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-stone-900 group-hover:text-[#d71e28] transition-colors">
+                            {loanAcc.name}
+                          </span>
+                          <span className="text-xs text-stone-500 font-mono font-medium">{loanAcc.accountNumber}</span>
+                        </div>
+                        <span className="text-xs text-stone-500 block mt-0.5">
+                          Payment due {loanAcc.nextPaymentDue || '10/31/2026'}: ${(loanAcc.nextPaymentAmount || 0).toFixed(2)} • Autopay {loanAcc.autopayEnabled ? 'On' : 'Off'}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="text-right sm:self-center">
-                    <div className="text-xl font-normal text-stone-900 tabular-nums">
-                      {hideBalances ? '••••' : `$${(loanAcc.principalBalance || 13643.95).toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+                    <div className="text-right sm:self-center">
+                      <div className="text-xl font-normal text-stone-900 tabular-nums">
+                        {hideBalances ? '••••' : `$${(loanAcc.principalBalance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+                      </div>
+                      <span className="text-[11px] text-stone-500">Outstanding principal balance</span>
                     </div>
-                    <span className="text-[11px] text-stone-500">Outstanding principal balance</span>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Investments & U.S. Treasury Bills (T-Bills) Group */}
               <div className="bg-white rounded-xl border border-stone-200 shadow-xs overflow-hidden">
@@ -1565,233 +1581,254 @@ export const WebBankingDashboard: React.FC<WebBankingDashboardProps> = ({
 
         {/* TAB 5: LOANS & CREDIT DETAILS (Full Web View - Matching aesqkbioflrf1.jpeg) */}
         {activeTab === 'loans' && (
-          <div className="max-w-3xl mx-auto bg-white rounded-xl border border-stone-200 shadow-xs overflow-hidden">
-            {/* Top balance banner with Loan Configurator trigger */}
-            <div className="bg-[#eef2ff] px-6 py-6 border-b border-stone-200 text-center">
-              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider block">
-                {loanAcc.name} {loanAcc.accountNumber}
-              </span>
-              <div className="text-4xl font-light text-stone-900 mt-1 tabular-nums">
-                ${(loanAcc.principalBalance || 13643.95).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-              </div>
-              <span className="text-xs text-stone-600 block mt-1">Outstanding principal balance</span>
+          loanAcc ? (
+            <div className="max-w-3xl mx-auto bg-white rounded-xl border border-stone-200 shadow-xs overflow-hidden">
+              {/* Top balance banner with Loan Configurator trigger */}
+              <div className="bg-[#eef2ff] px-6 py-6 border-b border-stone-200 text-center">
+                <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider block">
+                  {loanAcc.name} {loanAcc.accountNumber}
+                </span>
+                <div className="text-4xl font-light text-stone-900 mt-1 tabular-nums">
+                  ${(loanAcc.principalBalance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </div>
+                <span className="text-xs text-stone-600 block mt-1">Outstanding principal balance</span>
 
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
+                  <button
+                    onClick={() => setIsLoanConfigOpen(true)}
+                    className="bg-[#d71e28] hover:bg-[#b81620] text-white px-5 py-2 rounded-full text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+                    title="Configure loan amount from $700 up to $100,000,000.00 USD"
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                    <span>Configure Loan Amount (From $700 to $100M USD)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Loan Configurator Card */}
+              <div className="p-6 space-y-6">
+                <div className="bg-stone-50 border border-stone-300 rounded-xl p-5 shadow-xs space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-200 pb-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                        <Sliders className="w-4 h-4 text-[#d71e28]" />
+                        <span>Loan Amount Configuration & Limit Settings</span>
+                      </h3>
+                      <p className="text-xs text-stone-500 mt-0.5">
+                        Adjust your loan balance or credit line. Minimum loan: <strong className="text-stone-900">$700.00 USD</strong> • Highest allowable limit: <strong className="text-stone-900">$100,000,000.00 USD (100 Million)</strong>.
+                      </p>
+                    </div>
+
+                    <span className="bg-red-100 text-[#d71e28] text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-red-200">
+                      $700 Min - $100M Max
+                    </span>
+                  </div>
+
+                  {/* Preset Chips */}
+                  <div className="space-y-2">
+                    <span className="text-xs font-semibold text-stone-700 block">Quick Loan Amount Presets:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { label: '$700 (Min)', val: 700 },
+                        { label: '$10,000', val: 10000 },
+                        { label: '$100,000', val: 100000 },
+                        { label: '$1,000,000 ($1M)', val: 1000000 },
+                        { label: '$10,000,000 ($10M)', val: 10000000 },
+                        { label: '$50,000,000 ($50M)', val: 50000000 },
+                        { label: '$100,000,000 ($100M MAX)', val: 100000000 },
+                      ].map((chip) => (
+                        <button
+                          key={chip.val}
+                          onClick={() => handleUpdateLoanAmount(loanAcc.id, chip.val, (chip.val * 0.0549) / 12 + chip.val / 60, 60, 5.49)}
+                          className={`text-xs px-3 py-1.5 rounded-full font-semibold transition-colors border ${
+                            Math.round(loanAcc.principalBalance || 0) === chip.val
+                              ? 'bg-[#d71e28] text-white border-[#d71e28] shadow-xs'
+                              : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-100'
+                          }`}
+                        >
+                          {chip.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex flex-wrap items-center justify-end gap-2.5">
+                    <button
+                      onClick={() => {
+                        const reg = userData.registrationData;
+                        const userAddress = reg
+                          ? `${reg.c1StreetAddress || ''}, ${reg.c1City || ''}, ${reg.c1State || ''} ${reg.c1Zip || ''}`.trim()
+                          : '1048 Montgomery St, Apt 4B, San Francisco, CA 94133';
+
+                        downloadLoanDisclosurePdf({
+                          userName: reg?.c1FullName || userData.name || 'Kate20',
+                          userAddress,
+                          userPhone: reg?.c1HomePhone || '(415) 890-2134',
+                          userEmail: 'kate20@wellsfargo-customer.com',
+                          userEmployer: reg?.c1Employer || 'Apex BioTech Corp',
+                          userDob: reg?.c1Dob || '06/14/1992',
+                          userTinLast4: reg?.c1Tin ? reg.c1Tin.slice(-4) : '4321',
+                          accountName: loanAcc.name,
+                          accountNumber: loanAcc.accountNumber,
+                          loanAmount: loanAcc.principalBalance || 13643.95,
+                          apr: 5.49,
+                          termMonths: 60,
+                          monthlyPayment: loanAcc.nextPaymentAmount || 587.68,
+                          totalInterest: (loanAcc.nextPaymentAmount || 587.68) * 60 - (loanAcc.principalBalance || 13643.95),
+                          totalRepayment: (loanAcc.nextPaymentAmount || 587.68) * 60,
+                          loanTypeTitle: 'Commercial & Executive Loan',
+                        });
+                      }}
+                      className="border border-stone-800 text-stone-900 hover:bg-stone-100 text-xs font-semibold px-4 py-2 rounded-full transition-colors flex items-center gap-1.5 shadow-2xs"
+                      title="Download official Truth in Lending loan agreement (PDF)"
+                    >
+                      <Download className="w-3.5 h-3.5 text-[#d71e28]" />
+                      <span>Download Loan (PDF)</span>
+                    </button>
+
+                    <button
+                      onClick={() => setIsLoanConfigOpen(true)}
+                      className="bg-[#2b2b2b] hover:bg-black text-white text-xs font-semibold px-4 py-2 rounded-full transition-colors flex items-center gap-1.5 shadow-2xs"
+                    >
+                      <Sliders className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Open Full Loan Configurator (APR & Terms)</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Next Payment Card */}
+                <div className="bg-white border border-stone-200 rounded-xl p-5 shadow-xs">
+                  <h3 className="text-lg font-normal text-stone-900 mb-4">Next payment</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between items-center text-stone-800">
+                      <span>Payment due {loanAcc.nextPaymentDue || '10/31/2026'}</span>
+                      <span className="font-semibold tabular-nums text-base">
+                        ${(loanAcc.nextPaymentAmount || 0).toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-stone-600 text-xs pl-2 border-l-2 border-stone-200">
+                      <span>Principal and interest</span>
+                      <span className="tabular-nums">${(loanAcc.principalAndInterest || 0).toFixed(2)}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-stone-600 text-xs pl-2 border-l-2 border-stone-200">
+                      <span>Past due amount</span>
+                      <span className="tabular-nums text-amber-700 font-medium">
+                        ${(loanAcc.pastDueAmount || 0).toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="pt-2 border-t border-stone-100 flex justify-between items-center text-stone-900 font-semibold">
+                      <span>Total amount due</span>
+                      <span className="tabular-nums">${(loanAcc.totalAmountDue || 0).toFixed(2)}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-stone-600 text-xs pt-1">
+                      <span>Autopay</span>
+                      <span className={`font-semibold ${loanAcc.autopayEnabled ? 'text-emerald-700' : 'text-stone-700'}`}>
+                        {loanAcc.autopayEnabled ? 'On (10/31/2026)' : 'Off'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mt-6">
+                    <button
+                      onClick={() => handleToggleAutopay(loanAcc.id)}
+                      className="border border-stone-800 text-stone-900 hover:bg-stone-50 text-sm font-medium py-2.5 px-4 rounded-full transition-colors text-center"
+                    >
+                      {loanAcc.autopayEnabled ? 'Turn Off Autopay' : 'Set up Autopay'}
+                    </button>
+                    <button
+                      onClick={() => setSelectedAccount(loanAcc)}
+                      className="bg-[#2b2b2b] hover:bg-black text-white text-sm font-medium py-2.5 px-4 rounded-full transition-colors text-center shadow-xs"
+                    >
+                      Make payment
+                    </button>
+                  </div>
+                </div>
+
+                {/* Transactions List */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-sm text-stone-900 uppercase tracking-wider">
+                      Payment History & Direct Debits
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => downloadAccountStatementPdf(loanAcc, userData.name)}
+                      className="text-xs text-[#d71e28] hover:text-[#9b131c] font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download Loan Statement (PDF)</span>
+                    </button>
+                  </div>
+
+                  <div className="border border-stone-200 rounded-xl divide-y divide-stone-100 p-2">
+                    {loanAcc.transactions.length === 0 ? (
+                      <div className="py-6 text-center text-xs text-stone-500">
+                        No loan payments recorded for this period.
+                      </div>
+                    ) : (
+                      loanAcc.transactions.map((tx) => (
+                        <div
+                          key={tx.id}
+                          onClick={() => setSelectedTxForModal({ tx, account: loanAcc })}
+                          className="p-3 flex justify-between items-center text-xs rounded-lg hover:bg-stone-50 cursor-pointer group transition-colors"
+                        >
+                          <div className="flex-1 pr-3">
+                            <span className="text-[11px] text-stone-500 block">{tx.date}</span>
+                            <span className="font-medium text-stone-900 group-hover:text-[#d71e28] transition-colors block">
+                              {tx.description}
+                            </span>
+                            <span className="text-[10px] text-[#d71e28] group-hover:underline">
+                              Click for official receipt & print-to-PDF
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="font-semibold tabular-nums text-emerald-700 text-sm">
+                              +${tx.amount.toFixed(2)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                downloadTransactionReceiptPdf(tx, loanAcc, userData.name);
+                              }}
+                              className="p-1 rounded-full hover:bg-stone-200 text-stone-400 hover:text-[#d71e28] transition-colors"
+                              title="Download PDF Receipt"
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="max-w-3xl mx-auto bg-white rounded-xl border border-stone-200 shadow-xs p-8 text-center space-y-4">
+              <div className="w-16 h-16 bg-red-50 text-[#d71e28] rounded-full flex items-center justify-center mx-auto">
+                <Landmark className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-stone-900">No Active Loans or Credit Lines</h3>
+              <p className="text-sm text-stone-600 max-w-md mx-auto">
+                You currently do not have any active loans with Wells Fargo. You can apply for personal, auto, or commercial credit lines at any time.
+              </p>
+              <div className="pt-2">
                 <button
                   onClick={() => setIsLoanConfigOpen(true)}
-                  className="bg-[#d71e28] hover:bg-[#b81620] text-white px-5 py-2 rounded-full text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
-                  title="Configure loan amount from $700 up to $100,000,000.00 USD"
+                  className="bg-[#d71e28] hover:bg-[#b81620] text-white text-sm font-semibold px-6 py-2.5 rounded-full transition-colors inline-flex items-center gap-2 shadow-xs cursor-pointer"
                 >
-                  <Sliders className="w-3.5 h-3.5" />
-                  <span>Configure Loan Amount (From $700 to $100M USD)</span>
+                  <Sliders className="w-4 h-4" />
+                  <span>Apply for Loan & Credit Line</span>
                 </button>
               </div>
             </div>
-
-            {/* Quick Loan Configurator Card */}
-            <div className="p-6 space-y-6">
-              <div className="bg-stone-50 border border-stone-300 rounded-xl p-5 shadow-xs space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-200 pb-3">
-                  <div>
-                    <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                      <Sliders className="w-4 h-4 text-[#d71e28]" />
-                      <span>Loan Amount Configuration & Limit Settings</span>
-                    </h3>
-                    <p className="text-xs text-stone-500 mt-0.5">
-                      Adjust your loan balance or credit line. Minimum loan: <strong className="text-stone-900">$700.00 USD</strong> • Highest allowable limit: <strong className="text-stone-900">$100,000,000.00 USD (100 Million)</strong>.
-                    </p>
-                  </div>
-
-                  <span className="bg-red-100 text-[#d71e28] text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-red-200">
-                    $700 Min - $100M Max
-                  </span>
-                </div>
-
-                {/* Preset Chips */}
-                <div className="space-y-2">
-                  <span className="text-xs font-semibold text-stone-700 block">Quick Loan Amount Presets:</span>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { label: '$700 (Min)', val: 700 },
-                      { label: '$10,000', val: 10000 },
-                      { label: '$100,000', val: 100000 },
-                      { label: '$1,000,000 ($1M)', val: 1000000 },
-                      { label: '$10,000,000 ($10M)', val: 10000000 },
-                      { label: '$50,000,000 ($50M)', val: 50000000 },
-                      { label: '$100,000,000 ($100M MAX)', val: 100000000 },
-                    ].map((chip) => (
-                      <button
-                        key={chip.val}
-                        onClick={() => handleUpdateLoanAmount(loanAcc.id, chip.val, (chip.val * 0.0549) / 12 + chip.val / 60, 60, 5.49)}
-                        className={`text-xs px-3 py-1.5 rounded-full font-semibold transition-colors border ${
-                          Math.round(loanAcc.principalBalance || 0) === chip.val
-                            ? 'bg-[#d71e28] text-white border-[#d71e28] shadow-xs'
-                            : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-100'
-                        }`}
-                      >
-                        {chip.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-2 flex flex-wrap items-center justify-end gap-2.5">
-                  <button
-                    onClick={() => {
-                      const reg = userData.registrationData;
-                      const userAddress = reg
-                        ? `${reg.c1StreetAddress || ''}, ${reg.c1City || ''}, ${reg.c1State || ''} ${reg.c1Zip || ''}`.trim()
-                        : '1048 Montgomery St, Apt 4B, San Francisco, CA 94133';
-
-                      downloadLoanDisclosurePdf({
-                        userName: reg?.c1FullName || userData.name || 'Kate20',
-                        userAddress,
-                        userPhone: reg?.c1HomePhone || '(415) 890-2134',
-                        userEmail: 'kate20@wellsfargo-customer.com',
-                        userEmployer: reg?.c1Employer || 'Apex BioTech Corp',
-                        userDob: reg?.c1Dob || '06/14/1992',
-                        userTinLast4: reg?.c1Tin ? reg.c1Tin.slice(-4) : '4321',
-                        accountName: loanAcc.name,
-                        accountNumber: loanAcc.accountNumber,
-                        loanAmount: loanAcc.principalBalance || 13643.95,
-                        apr: 5.49,
-                        termMonths: 60,
-                        monthlyPayment: loanAcc.nextPaymentAmount || 587.68,
-                        totalInterest: (loanAcc.nextPaymentAmount || 587.68) * 60 - (loanAcc.principalBalance || 13643.95),
-                        totalRepayment: (loanAcc.nextPaymentAmount || 587.68) * 60,
-                        loanTypeTitle: 'Commercial & Executive Loan',
-                      });
-                    }}
-                    className="border border-stone-800 text-stone-900 hover:bg-stone-100 text-xs font-semibold px-4 py-2 rounded-full transition-colors flex items-center gap-1.5 shadow-2xs"
-                    title="Download official Truth in Lending loan agreement (PDF)"
-                  >
-                    <Download className="w-3.5 h-3.5 text-[#d71e28]" />
-                    <span>Download Loan (PDF)</span>
-                  </button>
-
-                  <button
-                    onClick={() => setIsLoanConfigOpen(true)}
-                    className="bg-[#2b2b2b] hover:bg-black text-white text-xs font-semibold px-4 py-2 rounded-full transition-colors flex items-center gap-1.5 shadow-2xs"
-                  >
-                    <Sliders className="w-3.5 h-3.5 text-amber-300" />
-                    <span>Open Full Loan Configurator (APR & Terms)</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Next Payment Card */}
-              <div className="bg-white border border-stone-200 rounded-xl p-5 shadow-xs">
-                <h3 className="text-lg font-normal text-stone-900 mb-4">Next payment</h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between items-center text-stone-800">
-                    <span>Payment due {loanAcc.nextPaymentDue || '10/31/2026'}</span>
-                    <span className="font-semibold tabular-nums text-base">
-                      ${(loanAcc.nextPaymentAmount || 587.68).toFixed(2)}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center text-stone-600 text-xs pl-2 border-l-2 border-stone-200">
-                    <span>Principal and interest</span>
-                    <span className="tabular-nums">${(loanAcc.principalAndInterest || 534.42).toFixed(2)}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center text-stone-600 text-xs pl-2 border-l-2 border-stone-200">
-                    <span>Past due amount</span>
-                    <span className="tabular-nums text-amber-700 font-medium">
-                      ${(loanAcc.pastDueAmount || 53.26).toFixed(2)}
-                    </span>
-                  </div>
-
-                  <div className="pt-2 border-t border-stone-100 flex justify-between items-center text-stone-900 font-semibold">
-                    <span>Total amount due</span>
-                    <span className="tabular-nums">${(loanAcc.totalAmountDue || 587.68).toFixed(2)}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center text-stone-600 text-xs pt-1">
-                    <span>Autopay</span>
-                    <span className={`font-semibold ${loanAcc.autopayEnabled ? 'text-emerald-700' : 'text-stone-700'}`}>
-                      {loanAcc.autopayEnabled ? 'On (10/31/2026)' : 'Off'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 mt-6">
-                  <button
-                    onClick={() => handleToggleAutopay(loanAcc.id)}
-                    className="border border-stone-800 text-stone-900 hover:bg-stone-50 text-sm font-medium py-2.5 px-4 rounded-full transition-colors text-center"
-                  >
-                    {loanAcc.autopayEnabled ? 'Turn Off Autopay' : 'Set up Autopay'}
-                  </button>
-                  <button
-                    onClick={() => setSelectedAccount(loanAcc)}
-                    className="bg-[#2b2b2b] hover:bg-black text-white text-sm font-medium py-2.5 px-4 rounded-full transition-colors text-center shadow-xs"
-                  >
-                    Make payment
-                  </button>
-                </div>
-              </div>
-
-              {/* Transactions List */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-sm text-stone-900 uppercase tracking-wider">
-                    Payment History & Direct Debits
-                  </h4>
-                  <button
-                    type="button"
-                    onClick={() => downloadAccountStatementPdf(loanAcc, userData.name)}
-                    className="text-xs text-[#d71e28] hover:text-[#9b131c] font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Download Loan Statement (PDF)</span>
-                  </button>
-                </div>
-
-                <div className="border border-stone-200 rounded-xl divide-y divide-stone-100 p-2">
-                  {loanAcc.transactions.length === 0 ? (
-                    <div className="py-6 text-center text-xs text-stone-500">
-                      No loan payments recorded for this period.
-                    </div>
-                  ) : (
-                    loanAcc.transactions.map((tx) => (
-                      <div
-                        key={tx.id}
-                        onClick={() => setSelectedTxForModal({ tx, account: loanAcc })}
-                        className="p-3 flex justify-between items-center text-xs rounded-lg hover:bg-stone-50 cursor-pointer group transition-colors"
-                      >
-                        <div className="flex-1 pr-3">
-                          <span className="text-[11px] text-stone-500 block">{tx.date}</span>
-                          <span className="font-medium text-stone-900 group-hover:text-[#d71e28] transition-colors block">
-                            {tx.description}
-                          </span>
-                          <span className="text-[10px] text-[#d71e28] group-hover:underline">
-                            Click for official receipt & print-to-PDF
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="font-semibold tabular-nums text-emerald-700 text-sm">
-                            +${tx.amount.toFixed(2)}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              downloadTransactionReceiptPdf(tx, loanAcc, userData.name);
-                            }}
-                            className="p-1 rounded-full hover:bg-stone-200 text-stone-400 hover:text-[#d71e28] transition-colors"
-                            title="Download PDF Receipt"
-                          >
-                            <Download className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+          )
         )}
 
         {/* TAB: U.S. TREASURY BILLS (T-BILLS) AUCTION DESK */}

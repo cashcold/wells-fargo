@@ -22,7 +22,7 @@ import { apiFetch } from '../../utils/api';
 interface LoanConfiguratorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  loanAccount: BankAccount;
+  loanAccount?: BankAccount | null;
   userData?: UserProfile;
   onUpdateLoanAmount: (accountId: string, newPrincipal: number, monthlyPayment: number, termMonths: number, apr: number) => void;
 }
@@ -34,7 +34,7 @@ export const LoanConfiguratorModal: React.FC<LoanConfiguratorModalProps> = ({
   userData,
   onUpdateLoanAmount,
 }) => {
-  const currentBalance = loanAccount.principalBalance || 13643.95;
+  const currentBalance = (loanAccount?.principalBalance ?? loanAccount?.availableBalance) || 25000;
   const [loanAmount, setLoanAmount] = useState<number>(currentBalance);
   const [termMonths, setTermMonths] = useState<number>(60);
   const [loanType, setLoanType] = useState<'personal' | 'real-estate' | 'commercial' | 'corporate'>('commercial');
@@ -143,8 +143,8 @@ export const LoanConfiguratorModal: React.FC<LoanConfiguratorModalProps> = ({
       userEmployer: reg?.c1Employer || 'Apex BioTech Corp',
       userDob: reg?.c1Dob || '06/14/1992',
       userTinLast4: reg?.c1Tin ? reg.c1Tin.slice(-4) : '4321',
-      accountName: loanAccount.name,
-      accountNumber: loanAccount.accountNumber,
+      accountName: loanAccount?.name || 'WELLS FARGO AUTO & PERSONAL LOAN',
+      accountNumber: loanAccount?.accountNumber || '..Pending',
       loanAmount,
       apr,
       termMonths,
@@ -160,7 +160,7 @@ export const LoanConfiguratorModal: React.FC<LoanConfiguratorModalProps> = ({
     if (loanAmount < MIN_LOAN_LIMIT) return;
 
     onUpdateLoanAmount(
-      loanAccount.id,
+      loanAccount?.id || 'loan-new',
       loanAmount,
       monthlyPayment,
       termMonths,
@@ -220,7 +220,7 @@ export const LoanConfiguratorModal: React.FC<LoanConfiguratorModalProps> = ({
         {/* Wells Fargo Banner */}
         <div className="bg-[#d71e28] text-white px-5 py-2.5 border-b-2 border-[#ffcc00] flex items-center justify-between text-xs shrink-0">
           <span className="font-medium">
-            Account: {loanAccount.name} ({loanAccount.accountNumber})
+            Account: {loanAccount?.name || 'New Loan Application'} ({loanAccount?.accountNumber || '..Pending'})
           </span>
           <span className="bg-black/30 text-amber-200 px-2 py-0.5 rounded text-[11px] font-semibold border border-amber-300/30">
             Highest Loan Allowed: $100 Million USD

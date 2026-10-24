@@ -2,7 +2,7 @@ import React from 'react';
 
 export interface WfLogoProps {
   className?: string;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'responsive';
   variant?: 'white' | 'red' | 'gold' | 'dark' | 'app-icon' | 'badge-only';
   showStagecoach?: boolean;
   showBox?: boolean;
@@ -17,13 +17,16 @@ export const WfLogo: React.FC<WfLogoProps> = ({
   showBox = true,
   subtitle,
 }) => {
-  // Dimension tokens
+  const isResponsive = size === 'responsive';
+
+  // Dimension tokens for fixed sizes
   const dimensions = {
     xs: { box: 22, text: 'text-xs', coachW: 24, coachH: 16 },
     sm: { box: 28, text: 'text-sm', coachW: 30, coachH: 20 },
     md: { box: 36, text: 'text-xl', coachW: 42, coachH: 26 },
     lg: { box: 48, text: 'text-2xl', coachW: 54, coachH: 34 },
     xl: { box: 64, text: 'text-3xl', coachW: 72, coachH: 46 },
+    responsive: { box: 28, text: 'text-xs sm:text-xl', coachW: 30, coachH: 20 },
   }[size];
 
   const colorClasses = {
@@ -100,16 +103,29 @@ export const WfLogo: React.FC<WfLogoProps> = ({
     );
   }
 
+  const isCustomDisplay = className.includes('hidden') || className.includes('flex') || className.includes('block');
+  const displayClass = isCustomDisplay ? '' : 'inline-flex';
+
   return (
-    <div className={`inline-flex items-center gap-2.5 select-none ${className}`}>
+    <div
+      className={`${displayClass} items-center select-none ${
+        isResponsive ? 'gap-1.5 sm:gap-2.5' : 'gap-2.5'
+      } ${className}`}
+    >
       {/* Iconic Wells Fargo Red Square Emblem with Stagecoach or WF */}
       {showBox && (
         <div
-          className="relative shrink-0 rounded-lg bg-gradient-to-b from-[#e0202a] to-[#b8151f] shadow-xs flex items-center justify-center p-1 border border-red-500/20"
-          style={{
-            width: dimensions.box,
-            height: dimensions.box,
-          }}
+          className={`relative shrink-0 rounded-lg bg-gradient-to-b from-[#e0202a] to-[#b8151f] shadow-xs flex items-center justify-center p-1 border border-red-500/20 ${
+            isResponsive ? 'w-7 h-7 sm:w-9 sm:h-9' : ''
+          }`}
+          style={
+            isResponsive
+              ? undefined
+              : {
+                  width: dimensions.box,
+                  height: dimensions.box,
+                }
+          }
         >
           {showStagecoach ? (
             <svg
@@ -143,8 +159,12 @@ export const WfLogo: React.FC<WfLogoProps> = ({
       {/* Brand Wordmark */}
       <div className="flex flex-col">
         <span
-          className={`font-serif font-black uppercase tracking-widest ${dimensions.text} ${colorClasses}`}
-          style={{ letterSpacing: '0.14em' }}
+          className={`font-serif font-black uppercase whitespace-nowrap ${
+            isResponsive
+              ? 'text-xs sm:text-lg lg:text-xl tracking-wider sm:tracking-widest'
+              : `${dimensions.text} tracking-widest`
+          } ${colorClasses}`}
+          style={{ letterSpacing: isResponsive ? undefined : '0.14em' }}
         >
           Wells Fargo
         </span>

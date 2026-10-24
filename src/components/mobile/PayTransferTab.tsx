@@ -110,7 +110,7 @@ export const PayTransferTab: React.FC<PayTransferTabProps> = ({ accounts, onExec
             >
               {accounts.map((a) => (
                 <option key={a.id} value={a.id} disabled={a.id === fromAccountId}>
-                  {a.name} {a.accountNumber} {a.type === 'loan' ? `(Due $${(a.totalAmountDue || 587.68).toFixed(2)})` : `($${a.availableBalance.toFixed(2)})`}
+                  {a.name} {a.accountNumber} {a.type === 'loan' ? `(Due $${((a.totalAmountDue ?? a.nextPaymentAmount) || 0).toFixed(2)})` : `($${a.availableBalance.toFixed(2)})`}
                 </option>
               ))}
             </select>
